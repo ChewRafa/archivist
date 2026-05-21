@@ -1,0 +1,35 @@
+{{define "base.html"}}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivist - {{.Title}}</title>
+    <link rel="stylesheet" href="/static/bulma.min.css">
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+    <aside class="menu app-sidebar">
+        <p class="menu-label">Archivist</p>
+        <p class="menu-tagline">Gestión de Aventureros</p>
+        <ul class="menu-list">
+            <li><a href="/" {{if eq .ActiveMenu "dashboard"}}class="is-active"{{end}}>Dashboard</a></li>
+            <li><a href="/characters" {{if eq .ActiveMenu "characters"}}class="is-active"{{end}}>Personajes</a></li>
+            <li><a href="/missions" {{if eq .ActiveMenu "missions"}}class="is-active"{{end}}>Misiones</a></li>
+            <li><a href="/dl" {{if eq .ActiveMenu "dl"}}class="is-active"{{end}}>Días Libres</a></li>
+            <li><a href="/transactions" {{if eq .ActiveMenu "transactions"}}class="is-active"{{end}}>Transacciones</a></li>
+            <li><a href="/guilds" {{if eq .ActiveMenu "guilds"}}class="is-active"{{end}}>Gremios</a></li>
+        </ul>
+        <div class="menu-auth">
+            <form method="POST" action="/logout" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <button type="submit" class="button is-small is-light">Cerrar sesión</button>
+            </form>
+        </div>
+    </aside>
+    <main class="app-content">
+        {{template "content" .}}
+    </main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,136 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Mission.Name}}</h1>
+    <div class="header-actions">
+        <a href="/missions/detail/{{.Mission.ID}}/edit" class="button is-primary">Editar</a>
+        <form method="POST" action="/missions/detail/{{.Mission.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar esta misión? También se eliminarán todas sus entradas.')">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="button is-danger">Eliminar</button>
+        </form>
+        <a href="/missions" class="button">Volver a Misiones</a>
+    </div>
+</div>
+
+<div class="box">
+    <div class="columns is-multiline">
+        <div class="column is-3">
+            <p class="heading">Fecha</p>
+            <p class="subtitle is-6">{{.Mission.Date.Format "2006-01-02"}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">DM</p>
+            <p class="subtitle is-6">{{.Mission.DM}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Personajes</p>
+            <p class="subtitle is-6">{{len .Mission.Entries}}</p>
+        </div>
+    </div>
+</div>
+
+{{if .Mission.Entries}}
+<div class="box">
+    <p class="title is-4">Entradas</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr><th>Personaje</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>XP Total</th><th>Oro</th><th>Renombre</th><th>Notas</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+            {{range .Mission.Entries}}
+            <tr>
+                <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                <td>{{printf "%.0f" .XPMission}}</td>
+                <td>{{printf "%.0f" .XPReport}}</td>
+                <td>{{printf "%.0f" .XPGuild}}</td>
+                <td class="xp-total">{{printf "%.0f" (add3 .XPMission .XPReport .XPGuild)}}</td>
+                <td>{{printf "%.1f" .Gold}}</td>
+                <td>{{printf "%.0f" .Renown}}</td>
+                <td>{{.Notes}}</td>
+                <td>
+                    <div class="buttons are-small">
+                        <a href="/missions/detail/{{.MissionID}}/entries/{{.ID}}/edit" class="button is-small">Editar</a>
+                        <form method="POST" action="/missions/detail/{{.MissionID}}/entries/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar esta entrada?')">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <button type="submit" class="button is-small is-danger">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+<div class="box">
+    <p class="title is-4">Agregar Personaje</p>
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="/missions/detail/{{.Mission.ID}}/entries">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="field">
+            <label class="label" for="character_id">Personaje</label>
+            <div class="control">
+                <div class="select">
+                    <select id="character_id" name="character_id" required>
+                        <option value="">Seleccionar personaje...</option>
+                        {{range .Characters}}
+                        <option value="{{.ID}}">{{.Name}} ({{.Player}})</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="xp_mission">XP Misión</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_mission" name="xp_mission" value="0">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="xp_report">XP Reporte</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_report" name="xp_report" value="0">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="xp_guild">XP Gremio</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_guild" name="xp_guild" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="gold">Oro</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="gold" name="gold" value="0">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="renown">Renombre</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="renown" name="renown" value="0">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="notes">Notas</label>
+                <div class="control">
+                    <input class="input" type="text" id="notes" name="notes">
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <button type="submit" class="button is-primary">Agregar</button>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

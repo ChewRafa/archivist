@@ -1,0 +1,53 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>Personajes</h1>
+    <div class="header-actions">
+        <a href="/characters/create" class="button is-primary">Nuevo Personaje</a>
+        <div class="buttons has-addons">
+            <a href="/characters" class="button {{if eq .Filter ""}}is-active{{end}}">Todos</a>
+            <a href="/characters?filter=Activo" class="button {{if eq .Filter "Activo"}}is-active{{end}}">Activos</a>
+            <a href="/characters?filter=Retirado" class="button {{if eq .Filter "Retirado"}}is-active{{end}}">Retirados</a>
+            <a href="/characters?filter=Muerto" class="button {{if eq .Filter "Muerto"}}is-active{{end}}">Muertos</a>
+        </div>
+    </div>
+</div>
+
+<div class="box">
+    <table class="table is-fullwidth is-striped is-hoverable character-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Personaje</th>
+                <th>Jugador</th>
+                <th>Estado</th>
+                <th>Especie</th>
+                <th>Clase</th>
+                <th>Gremio</th>
+                <th>Nivel</th>
+                <th>XP</th>
+                <th>Oro</th>
+                <th>Renombre</th>
+                <th>DL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Stats}}
+            <tr class="status-{{.Status}}">
+                <td>{{.Number}}</td>
+                <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
+                <td>{{.Player}}</td>
+                <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
+                <td>{{.Species}}</td>
+                <td>{{.Class}}</td>
+                <td>{{.GuildName}}</td>
+                <td class="level-cell">{{.Level}}</td>
+                <td>{{printf "%.0f" .XP}}</td>
+                <td class="gold-value">{{printf "%.1f" .GoldBalance}}</td>
+                <td>{{printf "%.0f" .Renown}}</td>
+                <td>{{.DLBalance}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

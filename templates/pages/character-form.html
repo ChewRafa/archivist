@@ -1,0 +1,80 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Title}}</h1>
+    <a href="/characters" class="button">Volver a Personajes</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="{{.Action}}" class="character-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="number">Número</label>
+                <div class="control">
+                    <input class="input" type="number" id="number" name="number" value="{{.Form.Number}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="player">Jugador</label>
+                <div class="control">
+                    <input class="input" type="text" id="player" name="player" value="{{.Form.Player}}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="name">Nombre del Personaje</label>
+            <div class="control">
+                <input class="input" type="text" id="name" name="name" value="{{.Form.Name}}" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="status">Estado</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="status" name="status">
+                            <option value="Activo" {{if eq .Form.Status "Activo"}}selected{{end}}>Activo</option>
+                            <option value="Retirado" {{if eq .Form.Status "Retirado"}}selected{{end}}>Retirado</option>
+                            <option value="Muerto" {{if eq .Form.Status "Muerto"}}selected{{end}}>Muerto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="species">Especie</label>
+                <div class="control">
+                    <input class="input" type="text" id="species" name="species" value="{{.Form.Species}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="class">Clase</label>
+                <div class="control">
+                    <input class="input" type="text" id="class" name="class" value="{{.Form.Class}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="guild_name">Gremio</label>
+            <div class="control">
+                <input class="input" type="text" id="guild_name" name="guild_name" value="{{.Form.GuildName}}">
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">{{.SubmitLabel}}</button>
+            </div>
+            <div class="control">
+                <a href="/characters" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

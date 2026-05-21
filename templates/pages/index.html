@@ -1,0 +1,113 @@
+{{define "content"}}
+<div class="columns is-multiline">
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Personajes Activos</p>
+            <p class="title is-2">{{.ActiveCount}}/{{.TotalCount}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Misiones Recientes</p>
+            <p class="title is-2">{{len .RecentMissions}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Uso de DL Reciente</p>
+            <p class="title is-2">{{len .RecentDLUsages}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="box has-text-centered">
+            <p class="heading">Transacciones Recientes</p>
+            <p class="title is-2">{{len .RecentTransactions}}</p>
+        </div>
+    </div>
+</div>
+
+<div class="columns is-multiline">
+    <div class="column is-4">
+        <div class="box">
+            <p class="title is-4">Distribución por Nivel</p>
+            <div class="level-bars">
+                {{range $level, $count := .LevelDist}}
+                <div class="level-bar">
+                    <span class="level-label">Nv.{{$level}}</span>
+                    <div class="bar-container">
+                        <div class="bar" style="width: {{mul $count 20}}%"></div>
+                    </div>
+                    <span class="bar-count">{{$count}}</span>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <div class="column is-4">
+        <div class="box">
+            <p class="title is-4">Distribución por Clase</p>
+            <ul class="dist-list">
+                {{range $class, $count := .ClassDist}}
+                <li><span>{{$class}}</span><span class="count">{{$count}}</span></li>
+                {{end}}
+            </ul>
+        </div>
+    </div>
+
+    <div class="column is-4">
+        <div class="box">
+            <p class="title is-4">Distribución por Especie</p>
+            <ul class="dist-list">
+                {{range $species, $count := .SpeciesDist}}
+                <li><span>{{$species}}</span><span class="count">{{$count}}</span></li>
+                {{end}}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-6">
+        <div class="box">
+            <p class="title is-4">Misiones Recientes</p>
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr><th>Fecha</th><th>DM</th><th>Misión</th><th>Personajes</th></tr>
+                </thead>
+                <tbody>
+                    {{range .RecentMissions}}
+                    <tr>
+                        <td>{{.Date.Format "2006-01-02"}}</td>
+                        <td>{{.DM}}</td>
+                        <td>{{.Name}}</td>
+                        <td>{{len .Entries}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="column is-6">
+        <div class="box">
+            <p class="title is-4">Uso de DL Reciente</p>
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr><th>Fecha</th><th>Personaje</th><th>DL</th><th>Descripción</th></tr>
+                </thead>
+                <tbody>
+                    {{range .RecentDLUsages}}
+                    <tr>
+                        <td>{{.Date.Format "2006-01-02"}}</td>
+                        <td>{{.Character.Name}}</td>
+                        <td>{{.DLUsed}}</td>
+                        <td>{{.Description}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}

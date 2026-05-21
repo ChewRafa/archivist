@@ -1,0 +1,78 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>Uso de DL</h1>
+</div>
+
+<div class="box">
+    <p class="title is-4">Uso de DL Reciente</p>
+    <form method="POST" action="/dl/usages" class="character-form" style="margin-bottom:1rem">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-row">
+            <div class="field">
+                <label class="label">Fecha</label>
+                <div class="control">
+                    <input class="input" type="date" name="date" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Personaje</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="character_id" required>
+                            <option value="">Seleccionar...</option>
+                            {{range .Characters}}
+                            <option value="{{.ID}}">{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">DL Usados</label>
+                <div class="control">
+                    <input class="input" type="number" name="dl_used" min="1" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Cambio de Oro</label>
+                <div class="control">
+                    <input class="input" type="number" name="gold_change" step="0.1" value="0">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Descripción</label>
+                <div class="control">
+                    <input class="input" type="text" name="description">
+                </div>
+            </div>
+            <div class="field" style="align-self:flex-end">
+                <div class="control">
+                    <button type="submit" class="button is-primary">Registrar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Personaje</th><th>DL Usados</th><th>Oro</th><th>Descripción</th><th>Acciones</th></tr></thead>
+        <tbody>
+            {{range .Usages}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                <td class="has-text-danger">{{.DLUsed}}</td>
+                <td>{{printf "%.1f" .GoldChange}}</td>
+                <td>{{.Description}}</td>
+                <td>
+                    <a href="/dl/usages/{{.ID}}/edit" class="button is-small is-info">Editar</a>
+                    <form method="POST" action="/dl/usages/{{.ID}}/delete" class="inline-form"
+                          onsubmit="return confirm('¿Estás seguro de eliminar este uso de DL?')">
+                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                        <button type="submit" class="button is-small is-danger">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

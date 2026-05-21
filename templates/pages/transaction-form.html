@@ -1,0 +1,60 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Title}}</h1>
+    <a href="/transactions" class="button">Volver a Transacciones</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="{{.Action}}" class="character-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="date">Fecha</label>
+                <div class="control">
+                    <input class="input" type="date" id="date" name="date" value="{{.Form.Date}}" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="character_id">Personaje</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="character_id" name="character_id" required>
+                            <option value="">Seleccionar...</option>
+                            {{range .Characters}}
+                            <option value="{{.ID}}" {{if eq .ID $.Form.CharacterID}}selected{{end}}>{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="amount">Monto</label>
+            <div class="control">
+                <input class="input" type="number" id="amount" name="amount" value="{{printf "%.1f" .Form.Amount}}" step="0.1" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="notes">Notas</label>
+            <div class="control">
+                <input class="input" type="text" id="notes" name="notes" value="{{.Form.Notes}}">
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">{{.SubmitLabel}}</button>
+            </div>
+            <div class="control">
+                <a href="/transactions" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

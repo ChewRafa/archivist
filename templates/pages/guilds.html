@@ -1,0 +1,61 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>Gremios</h1>
+    <div class="header-actions">
+        <a href="/guilds/create" class="button is-primary">Nuevo Gremio</a>
+    </div>
+</div>
+
+<div class="guilds-grid">
+    {{range .Guilds}}
+    <div class="card guild-card">
+        <div class="card-header">
+            <p class="card-header-title">{{.Name}}</p>
+            {{if .Leader}}
+            <p class="card-header-icon">
+                <span class="guild-leader">Líder: {{.Leader.Name}}</span>
+            </p>
+            {{end}}
+        </div>
+
+        <div class="card-content">
+            <div class="content">
+                {{if .RegisteredAt}}
+                <p><strong>Registro:</strong> {{.RegisteredAt.Format "2006-01-02"}}</p>
+                {{end}}
+                {{if .ApprovedAt}}
+                <p><strong>Aprobación:</strong> {{.ApprovedAt.Format "2006-01-02"}}</p>
+                {{end}}
+                {{if .HallType}}
+                <p><strong>Tipo de Sede:</strong> {{.HallType}}</p>
+                {{end}}
+                <p><strong>Costo de Vida:</strong> {{printf "%.2f" .CostOfLiving}}</p>
+                <p><strong>Arcas:</strong> <span class="gold-value">{{printf "%.1f" .Treasury}}</span></p>
+                {{if .Notes}}
+                <p><strong>Notas:</strong> {{.Notes}}</p>
+                {{end}}
+            </div>
+
+            <footer class="card-footer">
+                <a href="/guilds/detail/{{.ID}}" class="card-footer-item">Ver</a>
+                <a href="/guilds/detail/{{.ID}}/edit" class="card-footer-item">Editar</a>
+                <form method="POST" action="/guilds/detail/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este gremio?')">
+                    <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                    <button type="submit" class="card-footer-item" style="color:#f14668;cursor:pointer;background:none;border:none;font-family:inherit;font-size:inherit">Eliminar</button>
+                </form>
+            </footer>
+
+            {{if .Members}}
+            <hr>
+            <p class="heading">Miembros ({{len .Members}})</p>
+            <ul>
+                {{range .Members}}
+                <li><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a> <span class="member-class">({{.Class}} {{.Species}})</span></li>
+                {{end}}
+            </ul>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

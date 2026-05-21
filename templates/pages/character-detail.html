@@ -1,0 +1,135 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Stats.Name}}</h1>
+    <div class="header-actions">
+        <a href="/characters/detail/{{.Stats.ID}}/edit" class="button is-primary">Editar</a>
+        <form method="POST" action="/characters/detail/{{.Stats.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este personaje?')">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="button is-danger">Eliminar</button>
+        </form>
+        <a href="/characters" class="button">Volver a Personajes</a>
+    </div>
+</div>
+
+<div class="box">
+    <div class="columns is-multiline">
+        <div class="column is-2">
+            <p class="heading">Jugador</p>
+            <p class="subtitle is-6">{{.Stats.Player}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Estado</p>
+            <span class="tag is-{{if eq .Stats.Status "Activo"}}success{{else if eq .Stats.Status "Retirado"}}warning{{else}}danger{{end}}">{{.Stats.Status}}</span>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Especie</p>
+            <p class="subtitle is-6">{{.Stats.Species}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Clase</p>
+            <p class="subtitle is-6">{{.Stats.Class}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Gremio</p>
+            <p class="subtitle is-6">{{.Stats.GuildName}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Nivel</p>
+            <p class="title is-4 level-badge">{{.Stats.Level}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">XP Total</p>
+            <p class="subtitle is-6">{{printf "%.0f" .Stats.XP}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Oro</p>
+            <p class="subtitle is-6 gold-value">{{printf "%.1f" .Stats.GoldBalance}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Renombre</p>
+            <p class="subtitle is-6">{{printf "%.0f" .Stats.Renown}}</p>
+        </div>
+    </div>
+</div>
+
+{{if .Registries}}
+<div class="box">
+    <p class="title is-4">Registro de Personaje</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Evento</th><th>XP</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
+        <tbody>
+            {{range .Registries}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td>{{.Event}}</td>
+                <td>{{printf "%.0f" .Experience}}</td>
+                <td>{{printf "%.1f" .Gold}}</td>
+                <td>{{printf "%.0f" .Renown}}</td>
+                <td>{{.Notes}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+{{if .MissionEntries}}
+<div class="box">
+    <p class="title is-4">Misiones</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Misión</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
+        <tbody>
+            {{range .MissionEntries}}
+            <tr>
+                <td>{{.Mission.Date.Format "2006-01-02"}}</td>
+                <td>{{.Mission.Name}}</td>
+                <td>{{printf "%.0f" .XPMission}}</td>
+                <td>{{printf "%.0f" .XPReport}}</td>
+                <td>{{printf "%.0f" .XPGuild}}</td>
+                <td>{{printf "%.1f" .Gold}}</td>
+                <td>{{printf "%.0f" .Renown}}</td>
+                <td>{{.Notes}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+{{if .DLUsages}}
+<div class="box">
+    <p class="title is-4">Uso de Días Libres</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>DL Usados</th><th>Oro</th><th>Descripción</th></tr></thead>
+        <tbody>
+            {{range .DLUsages}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td>{{.DLUsed}}</td>
+                <td>{{printf "%.1f" .GoldChange}}</td>
+                <td>{{.Description}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+{{if .Transactions}}
+<div class="box">
+    <p class="title is-4">Transacciones</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
+        <tbody>
+            {{range .Transactions}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                <td>{{.Notes}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+{{end}}

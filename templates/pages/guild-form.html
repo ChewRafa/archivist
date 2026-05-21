@@ -1,0 +1,90 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Title}}</h1>
+    <a href="/guilds" class="button">Volver a Gremios</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="{{.Action}}" class="character-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="field">
+            <label class="label" for="name">Nombre del Gremio</label>
+            <div class="control">
+                <input class="input" type="text" id="name" name="name" value="{{.Form.Name}}" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="leader_id">Líder</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="leader_id" name="leader_id">
+                            <option value="">Sin líder</option>
+                            {{range .Characters}}
+                            <option value="{{.ID}}" {{if eq .ID $.Form.LeaderID}}selected{{end}}>{{.Name}} ({{.Player}})</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="hall_type">Tipo de Sede</label>
+                <div class="control">
+                    <input class="input" type="text" id="hall_type" name="hall_type" value="{{.Form.HallType}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="cost_of_living">Costo de Vida</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="cost_of_living" name="cost_of_living" value="{{printf "%.2f" .Form.CostOfLiving}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="treasury">Arcas</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="treasury" name="treasury" value="{{printf "%.2f" .Form.Treasury}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="registered_at">Fecha de Registro</label>
+                <div class="control">
+                    <input class="input" type="date" id="registered_at" name="registered_at" value="{{.Form.RegisteredAt}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="approved_at">Fecha de Aprobación</label>
+                <div class="control">
+                    <input class="input" type="date" id="approved_at" name="approved_at" value="{{.Form.ApprovedAt}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="notes">Notas</label>
+            <div class="control">
+                <textarea class="textarea" id="notes" name="notes">{{.Form.Notes}}</textarea>
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">{{.SubmitLabel}}</button>
+            </div>
+            <div class="control">
+                <a href="/guilds" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

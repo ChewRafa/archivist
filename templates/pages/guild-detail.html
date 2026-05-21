@@ -1,0 +1,72 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Guild.Name}}</h1>
+    <div class="header-actions">
+        <a href="/guilds/detail/{{.Guild.ID}}/edit" class="button is-primary">Editar</a>
+        <form method="POST" action="/guilds/detail/{{.Guild.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este gremio?')">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="button is-danger">Eliminar</button>
+        </form>
+        <a href="/guilds" class="button">Volver a Gremios</a>
+    </div>
+</div>
+
+<div class="box">
+    <div class="columns is-multiline">
+        <div class="column is-3">
+            <p class="heading">Líder</p>
+            <p class="subtitle is-6">{{if .Guild.Leader}}{{.Guild.Leader.Name}}{{else}}—{{end}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Tipo de Sede</p>
+            <p class="subtitle is-6">{{if .Guild.HallType}}{{.Guild.HallType}}{{else}}—{{end}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Costo de Vida</p>
+            <p class="subtitle is-6">{{printf "%.2f" .Guild.CostOfLiving}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Arcas</p>
+            <p class="subtitle is-6 gold-value">{{printf "%.1f" .Guild.Treasury}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Registro</p>
+            <p class="subtitle is-6">{{if .Guild.RegisteredAt}}{{.Guild.RegisteredAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+        </div>
+        <div class="column is-3">
+            <p class="heading">Aprobación</p>
+            <p class="subtitle is-6">{{if .Guild.ApprovedAt}}{{.Guild.ApprovedAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+        </div>
+    </div>
+</div>
+
+{{if .Guild.Notes}}
+<div class="box">
+    <p class="title is-4">Notas</p>
+    <p>{{.Guild.Notes}}</p>
+</div>
+{{end}}
+
+<div class="box">
+    <p class="title is-4">Miembros ({{len .Guild.Members}})</p>
+    {{if .Guild.Members}}
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr><th>Nombre</th><th>Clase</th><th>Especie</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            {{range .Guild.Members}}
+            <tr>
+                <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
+                <td>{{.Class}}</td>
+                <td>{{.Species}}</td>
+                <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p>Este gremio no tiene miembros.</p>
+    {{end}}
+</div>
+{{end}}

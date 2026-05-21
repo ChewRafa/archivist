@@ -1,0 +1,80 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>Editar Entrada - {{.Mission.Name}}</h1>
+    <a href="/missions/detail/{{.Mission.ID}}" class="button">Volver a la Misión</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="/missions/detail/{{.Mission.ID}}/entries/{{.Entry.ID}}">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="field">
+            <label class="label" for="character_id">Personaje</label>
+            <div class="control">
+                <div class="select">
+                    <select id="character_id" name="character_id" required>
+                        <option value="">Seleccionar personaje...</option>
+                        {{range .Characters}}
+                        <option value="{{.ID}}" {{if eq .ID $.Entry.CharacterID}}selected{{end}}>{{.Name}} ({{.Player}})</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="xp_mission">XP Misión</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_mission" name="xp_mission" value="{{printf "%.0f" .Entry.XPMission}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="xp_report">XP Reporte</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_report" name="xp_report" value="{{printf "%.0f" .Entry.XPReport}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="xp_guild">XP Gremio</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="xp_guild" name="xp_guild" value="{{printf "%.0f" .Entry.XPGuild}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="gold">Oro</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="gold" name="gold" value="{{printf "%.1f" .Entry.Gold}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="renown">Renombre</label>
+                <div class="control">
+                    <input class="input" type="number" step="any" id="renown" name="renown" value="{{printf "%.0f" .Entry.Renown}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="notes">Notas</label>
+                <div class="control">
+                    <input class="input" type="text" id="notes" name="notes" value="{{.Entry.Notes}}">
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Guardar Cambios</button>
+            </div>
+            <div class="control">
+                <a href="/missions/detail/{{.Mission.ID}}" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

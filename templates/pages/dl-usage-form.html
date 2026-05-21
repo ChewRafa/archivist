@@ -1,0 +1,68 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Title}}</h1>
+    <a href="/dl" class="button">Volver a Días Libres</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="{{.Action}}" class="character-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="date">Fecha</label>
+                <div class="control">
+                    <input class="input" type="date" id="date" name="date" value="{{.Form.Date}}" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="character_id">Personaje</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="character_id" name="character_id" required>
+                            <option value="">Seleccionar...</option>
+                            {{range .Characters}}
+                            <option value="{{.ID}}" {{if eq .ID $.Form.CharacterID}}selected{{end}}>{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="dl_used">DL Usados</label>
+                <div class="control">
+                    <input class="input" type="number" id="dl_used" name="dl_used" value="{{.Form.DLUsed}}" min="1" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="gold_change">Cambio de Oro</label>
+                <div class="control">
+                    <input class="input" type="number" id="gold_change" name="gold_change" value="{{printf "%.1f" .Form.GoldChange}}" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="description">Descripción</label>
+            <div class="control">
+                <input class="input" type="text" id="description" name="description" value="{{.Form.Description}}">
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">{{.SubmitLabel}}</button>
+            </div>
+            <div class="control">
+                <a href="/dl" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

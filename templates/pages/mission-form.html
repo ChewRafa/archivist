@@ -1,0 +1,46 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>{{.Title}}</h1>
+    <a href="/missions" class="button">Volver a Misiones</a>
+</div>
+
+<div class="box form-card">
+    {{if .Error}}
+    <div class="notification is-danger">{{.Error}}</div>
+    {{end}}
+
+    <form method="POST" action="{{.Action}}" class="character-form">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="field">
+            <label class="label" for="name">Nombre de la Misión</label>
+            <div class="control">
+                <input class="input" type="text" id="name" name="name" value="{{.Form.Name}}" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="date">Fecha</label>
+                <div class="control">
+                    <input class="input" type="date" id="date" name="date" value="{{.Form.Date}}" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="dm">DM</label>
+                <div class="control">
+                    <input class="input" type="text" id="dm" name="dm" value="{{.Form.DM}}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">{{.SubmitLabel}}</button>
+            </div>
+            <div class="control">
+                <a href="/missions" class="button">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{{end}}

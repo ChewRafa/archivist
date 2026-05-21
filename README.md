@@ -1,0 +1,184 @@
+# Archivist
+
+TTRPG Character and Guild Tracking — a web application built with Go for managing characters, missions, transactions, and guilds in tabletop role-playing games.
+
+## Features
+
+- **Dashboard** — overview stats, level/class/species distributions, recent missions and transactions
+- **Characters** — full CRUD with status tracking (Active, Retired, Dead), auto-calculated level, XP, gold balance, and renown
+- **Missions** — create missions with per-character XP, gold, and renown entries
+- **Transactions** — track gold income and expenses per character
+- **Guilds** — manage guilds with leaders, members, halls, treasuries, and cost of living
+- **Excel Import** — bulk import data from Excel spreadsheets
+- **Authentication** — session-based auth with bcrypt password hashing and CSRF protection
+
+## Tech Stack
+
+- **Language:** Go 1.25.5
+- **Framework:** [Gin](https://github.com/gin-gonic/gin) v1.12
+- **ORM:** [GORM](https://gorm.io) v1.31 with SQLite driver
+- **Database:** SQLite
+- **Templates:** Go `html/template` with block layout
+- **CSS:** [Bulma](https://bulma.io) + custom styles
+- **Auth:** bcrypt, session cookies via `gin-contrib/sessions`
+
+## Prerequisites
+
+- Go 1.25.5 or later
+
+## Quick Start
+
+```bash
+# Verify compilation
+go build ./...
+
+# Start the development server
+go run cmd/server/main.go
+```
+
+Open http://localhost:8080 in your browser and log in.
+
+## Configuration
+
+Configuration is handled via environment variables. See `env.example` for a template.
+
+| Variable         | Required | Default                                      | Description                            |
+|------------------|----------|----------------------------------------------|----------------------------------------|
+| `SESSION_SECRET` | In prod  | `dev-secret-change-in-production`            | Key for signing session cookies        |
+| `GIN_MODE`       | No       | `release`                                    | Gin mode (`release` or `debug`)        |
+| `PORT`           | No       | `8080` (hardcoded)                           | Server port (not yet wired)            |
+
+## Usage
+
+### Running the server
+
+```bash
+go run cmd/server/main.go
+```
+
+Starts the HTTP server on `:8080`. The SQLite database is auto-created at `data/archivist.db` on first run.
+
+### Creating an admin user
+
+```bash
+go run cmd/server/main.go --create-admin <username>
+```
+
+You will be prompted for a password. The command creates the user and exits.
+
+### Importing data from Excel
+
+```bash
+go run cmd/importer/main.go <path-to-excel-file>
+```
+
+Imports data from an Excel file with Spanish sheet names. See [Excel Import Format](#excel-import-format) for details.
+
+## Project Structure
+
+```
+cmd/
+├── server/main.go         HTTP server entry point
+└── importer/main.go       Excel → SQLite import tool
+
+internal/
+├── db/db.go               GORM + SQLite initialization and auto-migration
+├── handlers/
+│   ├── auth.go            Login/logout handlers
+│   ├── handlers.go        All CRUD handlers and route setup
+│   ├── middleware.go      Auth and CSRF middleware
+│   └── render.go          Template compilation and rendering
+├── models/
+│   ├── models.go          Character, Transaction, CostOfLiving, CharacterRegistry,
+│                          Mission, MissionEntry, Guild
+│   └── user.go            User model
+└── services/
+    ├── auth.go            Password hashing and user authentication
+    └── services.go        XP/level/gold/renown calculations
+
+templates/
+├── base.html              Base layout with sidebar and CSRF
+├── login.html             Standalone login page
+└── pages/                 Content templates for each page
+
+static/
+├── app.css                Custom styles
+└── bulma.min.css          Bulma CSS framework
+
+data/
+└── archivist.db           SQLite database (auto-created)
+```
+
+## Routes
+
+### Public (no authentication required)
+
+| Method | Path          | Description        |
+|--------|---------------|--------------------|
+| GET    | `/login`      | Login page         |
+| POST   | `/login`      | Login form submit  |
+| GET    | `/static/*`   | Static files       |
+
+### Authenticated
+
+| Method | Path                                               | Description              |
+|--------|----------------------------------------------------|--------------------------|
+| GET    | `/`                                                | Dashboard                |
+| POST   | `/logout`                                          | Log out                  |
+| GET    | `/characters`                                      | Character list           |
+| GET    | `/characters/create`                               | New character form       |
+| POST   | `/characters`                                      | Create character         |
+| GET    | `/characters/detail/:id`                           | Character detail         |
+| GET    | `/characters/detail/:id/edit`                      | Edit character form      |
+| POST   | `/characters/detail/:id`                           | Update character         |
+| POST   | `/characters/detail/:id/delete`                    | Delete character         |
+| GET    | `/missions`                                        | Mission list             |
+| GET    | `/missions/create`                                 | New mission form         |
+| POST   | `/missions`                                        | Create mission           |
+| GET    | `/missions/detail/:id`                             | Mission detail           |
+| GET    | `/missions/detail/:id/edit`                        | Edit mission form        |
+| POST   | `/missions/detail/:id`                             | Update mission           |
+| POST   | `/missions/detail/:id/delete`                      | Delete mission           |
+| POST   | `/missions/detail/:id/entries`                     | Add entry to mission     |
+| GET    | `/missions/detail/:id/entries/:eid/edit`           | Edit mission entry       |
+| POST   | `/missions/detail/:id/entries/:eid`                | Update mission entry     |
+| POST   | `/missions/detail/:id/entries/:eid/delete`         | Delete mission entry     |
+| GET    | `/transactions`                                    | Transaction list         |
+| POST   | `/transactions`                                    | Create transaction       |
+| GET    | `/transactions/detail/:id/edit`                    | Edit transaction form    |
+| POST   | `/transactions/detail/:id`                         | Update transaction       |
+| POST   | `/transactions/detail/:id/delete`                  | Delete transaction       |
+| GET    | `/guilds`                                          | Guild list               |
+| GET    | `/guilds/create`                                   | New guild form           |
+| POST   | `/guilds`                                          | Create guild             |
+| GET    | `/guilds/detail/:id`                               | Guild detail             |
+| GET    | `/guilds/detail/:id/edit`                          | Edit guild form          |
+| POST   | `/guilds/detail/:id`                               | Update guild             |
+| POST   | `/guilds/detail/:id/delete`                        | Delete guild             |
+
+All mutating requests (POST) require a valid `csrf_token` field.
+
+## Excel Import Format
+
+The importer reads from an Excel file with Spanish sheet names:
+
+| Sheet Name                  | Description                          |
+|-----------------------------|--------------------------------------|
+| `Lista de Personajes`       | Character roster                     |
+| `Compras`                   | Character transactions               |
+| `Costo de Vida`             | Cost of living records               |
+| `Registro de Personajes`    | Character registry/event log         |
+| `Registro de Misiones`      | Mission records                      |
+| `Gremios`                   | Guild records                        |
+
+## Development
+
+The database auto-migrates on every start — schema changes are applied live. Set `GIN_MODE=debug` for verbose Gin output:
+
+```bash
+GIN_MODE=debug go run cmd/server/main.go
+```
+
+## License
+
+MIT

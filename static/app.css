@@ -1,0 +1,196 @@
+.app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    border-right: 1px solid var(--bulma-border);
+}
+
+.menu-tagline {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--bulma-text-weak);
+    margin-bottom: 1.5rem;
+}
+
+.app-content {
+    margin-left: 240px;
+    padding: 2rem;
+    width: calc(100% - 240px);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.page-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.character-table tr.status-Activo {
+    border-left: 3px solid var(--bulma-success);
+}
+
+.character-table tr.status-Retirado {
+    border-left: 3px solid var(--bulma-warning);
+}
+
+.character-table tr.status-Muerto {
+    border-left: 3px solid var(--bulma-danger);
+}
+
+.gold-value {
+    color: var(--bulma-warning);
+    font-weight: 600;
+}
+
+.xp-total {
+    font-weight: 600;
+    color: var(--bulma-warning);
+}
+
+.level-cell {
+    font-weight: 700;
+    color: var(--bulma-warning);
+}
+
+.level-badge {
+    font-weight: 700;
+    color: var(--bulma-warning);
+}
+
+.member-class {
+    color: var(--bulma-text-weak);
+    font-size: 0.85rem;
+}
+
+.guild-leader {
+    color: var(--bulma-text-weak);
+}
+
+.form-card {
+    max-width: 800px;
+}
+
+.character-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.level-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.level-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.level-label {
+    width: 50px;
+    font-size: 0.85rem;
+    color: var(--bulma-text-weak);
+}
+
+.bar-container {
+    flex: 1;
+    background: var(--bulma-background);
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.bar {
+    height: 100%;
+    background: var(--bulma-primary);
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.bar-count {
+    width: 30px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.dist-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0;
+}
+
+.dist-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: var(--bulma-background);
+    border-radius: 4px;
+}
+
+.dist-list li .count {
+    font-weight: 600;
+    color: var(--bulma-primary);
+}
+
+.guilds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1rem;
+}
+
+.guild-card .card-header-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.char-link {
+    color: var(--bulma-primary);
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .app-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .app-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
