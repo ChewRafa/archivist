@@ -1,0 +1,57 @@
+{{define "content"}}
+<section class="section">
+    <h1 class="title">Importar Datos</h1>
+    <p class="subtitle">Sube un archivo Excel (.xlsx) para llenar la base de datos</p>
+
+    {{if .Error}}
+    <div class="notification is-danger">
+        <strong>Error:</strong> {{.Error}}
+    </div>
+    {{end}}
+
+    {{if .Result}}
+    <div class="notification {{if .Success}}is-success{{else}}is-warning{{end}}">
+        <strong>Resultado de la importación:</strong>
+        <ul class="mt-2">
+            <li>Personajes: {{.Result.Characters}}</li>
+            <li>Usos de DL: {{.Result.DLUsages}}</li>
+            <li>Transacciones: {{.Result.Transactions}}</li>
+            <li>Costos de Vida: {{.Result.CostOfLivings}}</li>
+            <li>Registros de Personajes: {{.Result.Registries}}</li>
+            <li>Misiones: {{.Result.Missions}}</li>
+            <li>Entradas de Misión: {{.Result.MissionEntries}}</li>
+            <li>Gremios: {{.Result.Guilds}}</li>
+        </ul>
+        {{if not .Success}}
+        <hr>
+        <strong>Errores:</strong>
+        <ul>
+            {{range .Result.Errors}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+        {{end}}
+        <hr>
+        <p class="is-size-7">{{.Summary}}</p>
+    </div>
+    {{end}}
+
+    <form method="POST" enctype="multipart/form-data" class="box">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+        <div class="field">
+            <label class="label">Archivo Excel</label>
+            <div class="control">
+                <input class="input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+            </div>
+            <p class="help">Solo archivos .xlsx con las hojas en español: Lista de Personajes, Uso de DL, Compras, Costo de Vida, Registro de Personajes, Registro de Misiones, Gremios.</p>
+        </div>
+
+        <div class="field">
+            <div class="control">
+                <button type="submit" class="button is-primary">Importar</button>
+            </div>
+        </div>
+    </form>
+</section>
+{{end}}

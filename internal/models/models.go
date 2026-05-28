@@ -15,6 +15,8 @@ type Character struct {
 	Species   string    `gorm:"size:100" json:"species"`
 	Class     string    `gorm:"size:100" json:"class"`
 	GuildName string    `gorm:"size:255" json:"guild_name"`
+	GuildRole string    `gorm:"size:100" json:"guild_role"`
+	Mount     string    `gorm:"size:100" json:"mount"`
 	DeletedAt *time.Time `gorm:"index" json:"deleted_at"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -42,13 +44,13 @@ type Transaction struct {
 }
 
 type CostOfLiving struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Date      time.Time `gorm:"index" json:"date"`
-	Inn       float64   `json:"inn"`
-	Guardiana float64   `json:"guardiana"`
-	PlumaNegra float64  `json:"pluma_negra"`
-	HijosAlba float64   `json:"hijos_alba"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Date        time.Time `gorm:"index" json:"date"`
+	CharacterID uint      `gorm:"index" json:"character_id"`
+	Character   Character `gorm:"foreignKey:CharacterID" json:"character"`
+	Amount      float64   `json:"amount"`
+	Notes       string    `gorm:"type:text" json:"notes"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type CharacterRegistry struct {

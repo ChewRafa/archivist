@@ -60,10 +60,25 @@
             </div>
         </div>
 
+        <div class="form-row">
+            <div class="field">
+                <label class="label" for="guild_name">Gremio</label>
+                <div class="control">
+                    <input class="input" type="text" id="guild_name" name="guild_name" value="{{.Form.GuildName}}">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="guild_role">Cargo en el Gremio</label>
+                <div class="control">
+                    <input class="input" type="text" id="guild_role" name="guild_role" value="{{.Form.GuildRole}}">
+                </div>
+            </div>
+        </div>
+
         <div class="field">
-            <label class="label" for="guild_name">Gremio</label>
+            <label class="label" for="mount">Montura</label>
             <div class="control">
-                <input class="input" type="text" id="guild_name" name="guild_name" value="{{.Form.GuildName}}">
+                <input class="input" type="text" id="mount" name="mount" value="{{.Form.Mount}}">
             </div>
         </div>
 

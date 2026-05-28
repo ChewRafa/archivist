@@ -105,6 +105,9 @@ func CharacterDetailHandler(c *gin.Context) {
 	var transactions []models.Transaction
 	db.DB.Where("character_id = ?", id).Order("date DESC").Find(&transactions)
 
+	var colEntries []models.CostOfLiving
+	db.DB.Where("character_id = ?", id).Order("date DESC").Find(&colEntries)
+
 	render(c, http.StatusOK, "character-detail.html", gin.H{
 		"Title":          stats.Name,
 		"Stats":          stats,
@@ -112,6 +115,7 @@ func CharacterDetailHandler(c *gin.Context) {
 		"MissionEntries": missionEntries,
 		"DLUsages":       dlUsages,
 		"Transactions":   transactions,
+		"CostOfLivings":  colEntries,
 	})
 }
 
@@ -973,6 +977,15 @@ type FormData struct {
 	Species   string
 	Class     string
 	GuildName string
+	GuildRole string
+	Mount     string
+}
+
+type CostOfLivingFormData struct {
+	Date        string
+	CharacterID uint
+	Amount      float64
+	Notes       string
 }
 
 func CharacterNewHandler(c *gin.Context) {
@@ -995,6 +1008,8 @@ func CharacterCreateHandler(c *gin.Context) {
 		Species:   c.PostForm("species"),
 		Class:     c.PostForm("class"),
 		GuildName: c.PostForm("guild_name"),
+		GuildRole: c.PostForm("guild_role"),
+		Mount:     c.PostForm("mount"),
 	}
 
 	if form.Name == "" {
@@ -1030,6 +1045,8 @@ func CharacterCreateHandler(c *gin.Context) {
 		Species:   form.Species,
 		Class:     form.Class,
 		GuildName: form.GuildName,
+		GuildRole: form.GuildRole,
+		Mount:     form.Mount,
 	}
 
 	if err := db.DB.Create(&character).Error; err != nil {
@@ -1068,6 +1085,8 @@ func CharacterEditHandler(c *gin.Context) {
 			Species:   character.Species,
 			Class:     character.Class,
 			GuildName: character.GuildName,
+			GuildRole: character.GuildRole,
+			Mount:     character.Mount,
 		},
 		"Error": "",
 	})
@@ -1084,6 +1103,8 @@ func CharacterUpdateHandler(c *gin.Context) {
 		Species:   c.PostForm("species"),
 		Class:     c.PostForm("class"),
 		GuildName: c.PostForm("guild_name"),
+		GuildRole: c.PostForm("guild_role"),
+		Mount:     c.PostForm("mount"),
 	}
 
 	if form.Name == "" {
@@ -1124,6 +1145,8 @@ func CharacterUpdateHandler(c *gin.Context) {
 	character.Species = form.Species
 	character.Class = form.Class
 	character.GuildName = form.GuildName
+	character.GuildRole = form.GuildRole
+	character.Mount = form.Mount
 
 	if err := db.DB.Save(&character).Error; err != nil {
 		render(c, http.StatusInternalServerError, "character-form.html", gin.H{
@@ -1144,6 +1167,153 @@ func CharacterDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Delete(&models.Character{}, id)
 	c.Redirect(http.StatusFound, "/characters")
+}
+
+func CostOfLivingHandler(c *gin.Context) {
+	var entries []models.CostOfLiving
+	db.DB.Order("date DESC").Preload("Character").Limit(100).Find(&entries)
+
+	var characters []models.Character
+	db.DB.Order("name ASC").Find(&characters)
+
+	render(c, http.StatusOK, "cost-of-living.html", gin.H{
+		"Title":      "Costo de Vida",
+		"ActiveMenu": "cost-of-living",
+		"Entries":    entries,
+		"Characters": characters,
+	})
+}
+
+func CostOfLivingCreateHandler(c *gin.Context) {
+	form := CostOfLivingFormData{
+		Date:        c.PostForm("date"),
+		CharacterID: parseUint(c.PostForm("character_id")),
+		Amount:      parseFloat(c.PostForm("amount")),
+		Notes:       c.PostForm("notes"),
+	}
+
+	if form.Date == "" || form.CharacterID == 0 {
+		c.Redirect(http.StatusFound, "/cost-of-living")
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", form.Date)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/cost-of-living")
+		return
+	}
+
+	entry := models.CostOfLiving{
+		Date:        date,
+		CharacterID: form.CharacterID,
+		Amount:      form.Amount,
+		Notes:       form.Notes,
+	}
+
+	db.DB.Create(&entry)
+	c.Redirect(http.StatusFound, "/cost-of-living")
+}
+
+func CostOfLivingEditHandler(c *gin.Context) {
+	id := c.Param("id")
+	var entry models.CostOfLiving
+	if err := db.DB.First(&entry, id).Error; err != nil {
+		c.Redirect(http.StatusFound, "/cost-of-living")
+		return
+	}
+
+	var characters []models.Character
+	db.DB.Order("name ASC").Find(&characters)
+
+	render(c, http.StatusOK, "cost-of-living-form.html", gin.H{
+		"Title":       "Editar Costo de Vida",
+		"ActiveMenu":  "cost-of-living",
+		"Action":      "/cost-of-living/" + id,
+		"SubmitLabel": "Actualizar",
+		"Form": CostOfLivingFormData{
+			Date:        entry.Date.Format("2006-01-02"),
+			CharacterID: entry.CharacterID,
+			Amount:      entry.Amount,
+			Notes:       entry.Notes,
+		},
+		"Characters": characters,
+		"Error":      "",
+	})
+}
+
+func CostOfLivingUpdateHandler(c *gin.Context) {
+	id := c.Param("id")
+	form := CostOfLivingFormData{
+		Date:        c.PostForm("date"),
+		CharacterID: parseUint(c.PostForm("character_id")),
+		Amount:      parseFloat(c.PostForm("amount")),
+		Notes:       c.PostForm("notes"),
+	}
+
+	if form.Date == "" || form.CharacterID == 0 {
+		var characters []models.Character
+		db.DB.Order("name ASC").Find(&characters)
+		render(c, http.StatusBadRequest, "cost-of-living-form.html", gin.H{
+			"Title":       "Editar Costo de Vida",
+			"ActiveMenu":  "cost-of-living",
+			"Action":      "/cost-of-living/" + id,
+			"SubmitLabel": "Actualizar",
+			"Form":        form,
+			"Characters":  characters,
+			"Error":       "Fecha y personaje son obligatorios",
+		})
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", form.Date)
+	if err != nil {
+		var characters []models.Character
+		db.DB.Order("name ASC").Find(&characters)
+		render(c, http.StatusBadRequest, "cost-of-living-form.html", gin.H{
+			"Title":       "Editar Costo de Vida",
+			"ActiveMenu":  "cost-of-living",
+			"Action":      "/cost-of-living/" + id,
+			"SubmitLabel": "Actualizar",
+			"Form":        form,
+			"Characters":  characters,
+			"Error":       "Fecha inválida",
+		})
+		return
+	}
+
+	var entry models.CostOfLiving
+	if err := db.DB.First(&entry, id).Error; err != nil {
+		c.Redirect(http.StatusFound, "/cost-of-living")
+		return
+	}
+
+	entry.Date = date
+	entry.CharacterID = form.CharacterID
+	entry.Amount = form.Amount
+	entry.Notes = form.Notes
+
+	if err := db.DB.Save(&entry).Error; err != nil {
+		var characters []models.Character
+		db.DB.Order("name ASC").Find(&characters)
+		render(c, http.StatusInternalServerError, "cost-of-living-form.html", gin.H{
+			"Title":       "Editar Costo de Vida",
+			"ActiveMenu":  "cost-of-living",
+			"Action":      "/cost-of-living/" + id,
+			"SubmitLabel": "Actualizar",
+			"Form":        form,
+			"Characters":  characters,
+			"Error":       "Error al actualizar",
+		})
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/cost-of-living")
+}
+
+func CostOfLivingDeleteHandler(c *gin.Context) {
+	id := c.Param("id")
+	db.DB.Delete(&models.CostOfLiving{}, id)
+	c.Redirect(http.StatusFound, "/cost-of-living")
 }
 
 func SetupRoutes(r *gin.Engine) {
@@ -1201,6 +1371,16 @@ func SetupRoutes(r *gin.Engine) {
 			txDetail.POST("/:id", TransactionUpdateHandler)
 			txDetail.POST("/:id/delete", TransactionDeleteHandler)
 		}
+		auth.GET("/cost-of-living", CostOfLivingHandler)
+		auth.POST("/cost-of-living", CostOfLivingCreateHandler)
+		colDetail := auth.Group("/cost-of-living")
+		{
+			colDetail.GET("/:id/edit", CostOfLivingEditHandler)
+			colDetail.POST("/:id", CostOfLivingUpdateHandler)
+			colDetail.POST("/:id/delete", CostOfLivingDeleteHandler)
+		}
+		auth.GET("/import", ImportPageHandler)
+		auth.POST("/import", ImportPostHandler)
 		auth.GET("/guilds", GuildsHandler)
 		auth.GET("/guilds/create", GuildNewHandler)
 		auth.POST("/guilds", GuildCreateHandler)

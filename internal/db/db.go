@@ -32,5 +32,13 @@ func Init(dbPath string) {
 		log.Fatal("Failed to migrate database: ", err)
 	}
 
+	// Drop orphan columns from old CostOfLiving model
+	migrator := DB.Migrator()
+	for _, col := range []string{"inn", "guardiana", "pluma_negra", "hijos_alba"} {
+		if migrator.HasColumn(&models.CostOfLiving{}, col) {
+			migrator.DropColumn(&models.CostOfLiving{}, col)
+		}
+	}
+
 	log.Println("Database initialized successfully")
 }

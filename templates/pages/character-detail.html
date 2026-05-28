@@ -34,6 +34,14 @@
             <p class="subtitle is-6">{{.Stats.GuildName}}</p>
         </div>
         <div class="column is-2">
+            <p class="heading">Cargo</p>
+            <p class="subtitle is-6">{{.Stats.GuildRole}}</p>
+        </div>
+        <div class="column is-2">
+            <p class="heading">Montura</p>
+            <p class="subtitle is-6">{{.Stats.Mount}}</p>
+        </div>
+        <div class="column is-2">
             <p class="heading">Nivel</p>
             <p class="title is-4 level-badge">{{.Stats.Level}}</p>
         </div>
@@ -125,6 +133,24 @@
             <tr>
                 <td>{{.Date.Format "2006-01-02"}}</td>
                 <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                <td>{{.Notes}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+
+{{if .CostOfLivings}}
+<div class="box">
+    <p class="title is-4">Costo de Vida</p>
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
+        <tbody>
+            {{range .CostOfLivings}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td class="has-text-danger">{{printf "%.1f" .Amount}}</td>
                 <td>{{.Notes}}</td>
             </tr>
             {{end}}

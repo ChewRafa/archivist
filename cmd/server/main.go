@@ -40,6 +40,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.MaxMultipartMemory = 32 << 20
 
 	secret := os.Getenv("SESSION_SECRET")
 	if secret == "" {

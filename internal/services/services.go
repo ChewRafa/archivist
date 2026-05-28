@@ -53,6 +53,13 @@ func GetGoldBalance(characterID uint) float64 {
 		Scan(&txGold)
 	total += txGold
 
+	var colGold float64
+	db.DB.Model(&models.CostOfLiving{}).
+		Where("character_id = ?", characterID).
+		Select("COALESCE(SUM(amount), 0)").
+		Scan(&colGold)
+	total += colGold
+
 	return total
 }
 

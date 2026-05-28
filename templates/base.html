@@ -16,9 +16,11 @@
             <li><a href="/" {{if eq .ActiveMenu "dashboard"}}class="is-active"{{end}}>Dashboard</a></li>
             <li><a href="/characters" {{if eq .ActiveMenu "characters"}}class="is-active"{{end}}>Personajes</a></li>
             <li><a href="/missions" {{if eq .ActiveMenu "missions"}}class="is-active"{{end}}>Misiones</a></li>
+            <li><a href="/cost-of-living" {{if eq .ActiveMenu "cost-of-living"}}class="is-active"{{end}}>Costo de Vida</a></li>
             <li><a href="/dl" {{if eq .ActiveMenu "dl"}}class="is-active"{{end}}>Días Libres</a></li>
             <li><a href="/transactions" {{if eq .ActiveMenu "transactions"}}class="is-active"{{end}}>Transacciones</a></li>
             <li><a href="/guilds" {{if eq .ActiveMenu "guilds"}}class="is-active"{{end}}>Gremios</a></li>
+            <li><a href="/import" {{if eq .ActiveMenu "import"}}class="is-active"{{end}}>Importar</a></li>
         </ul>
         <div class="menu-auth">
             <form method="POST" action="/logout" class="inline-form">
