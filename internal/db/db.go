@@ -1,7 +1,9 @@
 package db
 
 import (
+	"fmt"
 	"log"
+	"strings"
 
 	"codeberg.org/chewrafa/archivist/internal/models"
 	"gorm.io/driver/sqlite"
@@ -16,6 +18,12 @@ func Init(dbPath string) {
 	if err != nil {
 		log.Fatal("Failed to connect to database: ", err)
 	}
+
+	// Deduplicate tables before AutoMigrate adds unique indexes
+	deduplicateTable("dl_usages", []string{"date", "character_id", "dl_used", "description"})
+	deduplicateTable("transactions", []string{"date", "character_id", "amount", "notes"})
+	deduplicateTable("cost_of_livings", []string{"date", "character_id", "amount"})
+	deduplicateTable("character_registries", []string{"date", "character_id", "event"})
 
 	err = DB.AutoMigrate(
 		&models.User{},
@@ -41,4 +49,23 @@ func Init(dbPath string) {
 	}
 
 	log.Println("Database initialized successfully")
+}
+
+func deduplicateTable(table string, columns []string) {
+	if !DB.Migrator().HasTable(table) {
+		return
+	}
+	cols := strings.Join(columns, ", ")
+	sql := fmt.Sprintf(
+		"DELETE FROM %s WHERE id NOT IN (SELECT id FROM (SELECT MIN(id) AS id FROM %s GROUP BY %s))",
+		table, table, cols,
+	)
+	res := DB.Exec(sql)
+	if res.Error != nil {
+		log.Printf("Warning: failed to deduplicate %s: %v", table, res.Error)
+		return
+	}
+	if res.RowsAffected > 0 {
+		log.Printf("Removed %d duplicate row(s) from %s", res.RowsAffected, table)
+	}
 }
