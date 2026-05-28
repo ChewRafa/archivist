@@ -5,6 +5,9 @@
 *.so
 *.dylib
 archivist
+importer
+server
+*.xlsx
 
 # Test binary, built with `go test -c`
 *.test

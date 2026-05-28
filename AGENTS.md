@@ -18,10 +18,10 @@ Go 1.25.5 web app for TTRPG character/guild tracking. Single module, no monorepo
 cmd/server/main.go      → Gin HTTP server (release mode by default)
 cmd/importer/main.go    → one-shot Excel → SQLite importer
 internal/db/db.go       → GORM + SQLite, path: data/archivist.db
-internal/models/        → 10 models: User, Character, DLAccrual, DLUsage, Transaction,
+internal/models/        → 9 models: User, Character, DLUsage, Transaction,
                           CostOfLiving, CharacterRegistry, Mission, MissionEntry, Guild
 internal/services/      → business logic: XP/level, gold/DL/renown calculations + auth
-internal/handlers/      → Gin route setup + 7 page handlers, auth, middleware, render
+internal/handlers/      → Gin route setup, CRUD handlers, auth, middleware, render
 templates/base.html     → Base layout with sidebar, auth status, CSRF
 templates/login.html    → Standalone login form (no base layout)
 templates/pages/*.html  → Content-only templates (define "content" block)
@@ -35,8 +35,13 @@ static/                 → CSS and other static assets
 - **Templates**: base layout (`templates/base.html`) + content blocks (`templates/pages/*.html`). Login page is standalone.
 - **Auth**: session cookies via `gin-contrib/sessions` + cookie store. All routes except `/login` and `/static` require authentication.
 - **CSRF**: token stored in session, validated on all POST/PUT/DELETE requests. Every form includes `<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">`.
-- **SQLite file**: `data/archuivist.db` — relative to working directory
+- **SQLite file**: `data/archivist.db` — relative to working directory
 - **Excel importer** reads Spanish sheet names (e.g. "Lista de Personajes", "Conteo de DL")
 
 ## Routes
-`/login` `/logout` `/` `/characters` `/characters/:id` `/missions` `/dl` `/transactions` `/guilds`
+`/login` `/logout` `/` `/characters` `/characters/detail/:id` `/missions` `/missions/detail/:id`
+`/dl` `/dl/usages` `/transactions` `/transactions/detail/:id`
+`/cost-of-living` `/import` `/guilds` `/guilds/detail/:id`
+
+## Project Rules
+YOU ARE FORBIDDEN TO RUN `git commit`. Do not stage or commit any files. 

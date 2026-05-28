@@ -7,6 +7,8 @@ TTRPG Character and Guild Tracking — a web application built with Go for manag
 - **Dashboard** — overview stats, level/class/species distributions, recent missions and transactions
 - **Characters** — full CRUD with status tracking (Active, Retired, Dead), auto-calculated level, XP, gold balance, and renown
 - **Missions** — create missions with per-character XP, gold, and renown entries
+- **DL (Días Libres)** — track free-day usage per character with gold adjustments
+- **Cost of Living** — record recurring upkeep costs per character
 - **Transactions** — track gold income and expenses per character
 - **Guilds** — manage guilds with leaders, members, halls, treasuries, and cost of living
 - **Excel Import** — bulk import data from Excel spreadsheets
@@ -86,6 +88,7 @@ internal/
 ├── handlers/
 │   ├── auth.go            Login/logout handlers
 │   ├── handlers.go        All CRUD handlers and route setup
+│   ├── importer.go        Web-based Excel import handler
 │   ├── middleware.go      Auth and CSRF middleware
 │   └── render.go          Template compilation and rendering
 ├── models/
@@ -143,11 +146,23 @@ data/
 | GET    | `/missions/detail/:id/entries/:eid/edit`           | Edit mission entry       |
 | POST   | `/missions/detail/:id/entries/:eid`                | Update mission entry     |
 | POST   | `/missions/detail/:id/entries/:eid/delete`         | Delete mission entry     |
+| GET    | `/dl`                                              | DL usage list            |
+| POST   | `/dl/usages`                                       | Create DL usage          |
+| GET    | `/dl/usages/:id/edit`                              | Edit DL usage form       |
+| POST   | `/dl/usages/:id`                                   | Update DL usage          |
+| POST   | `/dl/usages/:id/delete`                            | Delete DL usage          |
 | GET    | `/transactions`                                    | Transaction list         |
 | POST   | `/transactions`                                    | Create transaction       |
 | GET    | `/transactions/detail/:id/edit`                    | Edit transaction form    |
 | POST   | `/transactions/detail/:id`                         | Update transaction       |
 | POST   | `/transactions/detail/:id/delete`                  | Delete transaction       |
+| GET    | `/cost-of-living`                                  | Cost of living list      |
+| POST   | `/cost-of-living`                                  | Create cost of living    |
+| GET    | `/cost-of-living/:id/edit`                         | Edit cost of living form |
+| POST   | `/cost-of-living/:id`                              | Update cost of living    |
+| POST   | `/cost-of-living/:id/delete`                       | Delete cost of living    |
+| GET    | `/import`                                          | Import page              |
+| POST   | `/import`                                          | Submit Excel import      |
 | GET    | `/guilds`                                          | Guild list               |
 | GET    | `/guilds/create`                                   | New guild form           |
 | POST   | `/guilds`                                          | Create guild             |
@@ -165,6 +180,7 @@ The importer reads from an Excel file with Spanish sheet names:
 | Sheet Name                  | Description                          |
 |-----------------------------|--------------------------------------|
 | `Lista de Personajes`       | Character roster                     |
+| `Uso de DL`                 | DL usage records                     |
 | `Compras`                   | Character transactions               |
 | `Costo de Vida`             | Cost of living records               |
 | `Registro de Personajes`    | Character registry/event log         |
