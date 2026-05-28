@@ -1,0 +1,73 @@
+{{define "content"}}
+<div class="page-header">
+    <h1>Costo de Vida</h1>
+</div>
+
+<div class="box">
+    <p class="title is-4">Registrar Costo de Vida</p>
+    <form method="POST" action="/cost-of-living" class="form-row">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="field">
+            <label class="label" for="date">Fecha</label>
+            <div class="control">
+                <input class="input" type="date" id="date" name="date" required>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="character_id">Personaje</label>
+            <div class="control">
+                <div class="select">
+                    <select id="character_id" name="character_id" required>
+                        <option value="">Seleccionar...</option>
+                        {{range .Characters}}
+                        <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="amount">Monto</label>
+            <div class="control">
+                <input class="input" type="number" step="any" id="amount" name="amount" required>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="notes">Notas</label>
+            <div class="control">
+                <input class="input" type="text" id="notes" name="notes">
+            </div>
+        </div>
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Agregar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{{if .Entries}}
+<div class="box">
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead><tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead>
+        <tbody>
+            {{range .Entries}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td>{{.Character.Name}}</td>
+                <td class="has-text-danger">{{printf "%.2f" .Amount}}</td>
+                <td>{{.Notes}}</td>
+                <td>
+                    <a href="/cost-of-living/{{.ID}}/edit" class="button is-small">Editar</a>
+                    <form method="POST" action="/cost-of-living/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Eliminar este registro?')">
+                        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                        <button type="submit" class="button is-small is-danger">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
+{{end}}
