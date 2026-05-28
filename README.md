@@ -44,11 +44,60 @@ Open http://localhost:8080 in your browser and log in.
 
 Configuration is handled via environment variables. See `env.example` for a template.
 
-| Variable         | Required | Default                                      | Description                            |
-|------------------|----------|----------------------------------------------|----------------------------------------|
-| `SESSION_SECRET` | In prod  | `dev-secret-change-in-production`            | Key for signing session cookies        |
-| `GIN_MODE`       | No       | `release`                                    | Gin mode (`release` or `debug`)        |
-| `PORT`           | No       | `8080` (hardcoded)                           | Server port (not yet wired)            |
+| Variable          | Required | Default                                      | Description                            |
+|-------------------|----------|----------------------------------------------|----------------------------------------|
+| `SESSION_SECRET`  | In prod  | `dev-secret-change-in-production`            | Key for signing session cookies        |
+| `GIN_MODE`        | No       | `release`                                    | Gin mode (`release` or `debug`)        |
+| `PORT`            | No       | `8080`                                       | Server port (set automatically by Render) |
+| `DB_PATH`         | No       | `data/archivist.db`                          | SQLite path (local dev)                |
+| `DATABASE_URL`    | On Render | —                                           | PostgreSQL DSN (set automatically by Render, overrides SQLite) |
+| `ADMIN_USERNAME`  | On first deploy | —                                     | Initial admin username (auto-created if no users exist) |
+| `ADMIN_PASSWORD`  | On first deploy | —                                     | Initial admin password                 |
+
+## Deployment
+
+### Deploy on Render (free tier)
+
+The repo includes a [`render.yaml`](render.yaml) for one-click deployment.
+
+1. Push this repo to GitHub/GitLab
+2. In the [Render Dashboard](https://dashboard.render.com), click **New → Blueprint**
+3. Connect your repo — Render auto-detects `render.yaml`
+4. Render creates:
+   - A **Web Service** (free tier — sleeps after 15 min idle)
+   - A **PostgreSQL database** (free tier — 1 GB)
+5. Render automatically sets `DATABASE_URL` on the web service — the app detects it and uses PostgreSQL instead of SQLite
+6. On first deploy, if `ADMIN_USERNAME` and `ADMIN_PASSWORD` are set, an admin user is created automatically
+7. Retrieve `SESSION_SECRET` and `ADMIN_PASSWORD` from Render's **Environment** tab
+
+> **Important**: After the first deploy succeeds, remove `ADMIN_USERNAME` and `ADMIN_PASSWORD` env vars for security.
+
+### Manual setup
+
+| Setting               | Value                     |
+|------------------------|---------------------------|
+| **Runtime**            | Go                        |
+| **Build Command**      | `./build.sh`              |
+| **Start Command**      | `./app`                   |
+| **Health Check Path**  | `/health`                 |
+| **PostgreSQL**         | Create a free Render PostgreSQL instance |
+
+Required environment variables:
+- `SESSION_SECRET` — set to a long random string
+- `DATABASE_URL` — set automatically when PostgreSQL is linked; the app auto-detects this and uses PostgreSQL
+
+Optional (first deploy only):
+- `ADMIN_USERNAME` — initial admin username
+- `ADMIN_PASSWORD` — initial admin password
+
+### Local vs Render
+
+The app auto-detects the environment:
+
+| Env | Database | Config |
+|-----|----------|--------|
+| **Local dev** | SQLite (`data/archivist.db`) | No `DATABASE_URL` set |
+| **Render** | PostgreSQL (free 1 GB) | `DATABASE_URL` set automatically |
 
 ## Usage
 

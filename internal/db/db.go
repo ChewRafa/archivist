@@ -3,9 +3,11 @@ package db
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"codeberg.org/chewrafa/archivist/internal/models"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -14,7 +16,12 @@ var DB *gorm.DB
 
 func Init(dbPath string) {
 	var err error
-	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	} else {
+		DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	}
 	if err != nil {
 		log.Fatal("Failed to connect to database: ", err)
 	}

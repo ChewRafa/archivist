@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"codeberg.org/chewrafa/archivist/internal/db"
 	"codeberg.org/chewrafa/archivist/internal/handlers"
+	"codeberg.org/chewrafa/archivist/internal/models"
 	"codeberg.org/chewrafa/archivist/internal/services"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -18,7 +20,25 @@ func main() {
 	createAdmin := flag.String("create-admin", "", "Create an admin user and exit")
 	flag.Parse()
 
-	db.Init("data/archivist.db")
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "data/archivist.db"
+	}
+	db.Init(dbPath)
+
+	if adminUser := os.Getenv("ADMIN_USERNAME"); adminUser != "" {
+		if adminPass := os.Getenv("ADMIN_PASSWORD"); adminPass != "" {
+			var count int64
+			db.DB.Model(&models.User{}).Count(&count)
+			if count == 0 {
+				if err := services.CreateUser(adminUser, adminPass); err != nil {
+					log.Printf("Failed to create admin user '%s': %s", adminUser, err)
+				} else {
+					log.Printf("Admin user '%s' created from environment variables", adminUser)
+				}
+			}
+		}
+	}
 
 	if *createAdmin != "" {
 		fmt.Print("Password: ")
@@ -50,10 +70,18 @@ func main() {
 	store := cookie.NewStore([]byte(secret))
 	r.Use(sessions.Sessions("archivist_session", store))
 
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
 	handlers.SetupRoutes(r)
 
-	log.Println("Server starting on http://localhost:8080")
-	if err := r.Run(":8080"); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Server starting on port %s", port)
+	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server: ", err)
 	}
 }
