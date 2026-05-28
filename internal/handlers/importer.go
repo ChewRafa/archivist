@@ -13,6 +13,7 @@ func ImportPageHandler(c *gin.Context) {
 	render(c, http.StatusOK, "import.html", gin.H{
 		"Title":      "Importar Datos",
 		"ActiveMenu": "import",
+		"Sheets":     services.AllSheetInfo(),
 	})
 }
 
@@ -58,19 +59,24 @@ func ImportPostHandler(c *gin.Context) {
 	}
 	defer f.Close()
 
-	result := services.ImportExcel(f)
-
-	errs := result.Errors
-	success := true
-	if len(errs) > 0 {
-		success = false
+	selectedSheets := c.PostFormArray("sheets")
+	var opts []services.ImportOptions
+	if len(selectedSheets) > 0 {
+		opts = append(opts, services.ImportOptions{Sheets: selectedSheets})
 	}
 
+	result := services.ImportExcel(f, opts...)
+
 	summary := fmt.Sprintf(
-		"Personajes: %d | Usos de DL: %d | Compras: %d | Costos de Vida: %d | Registros: %d | Misiones: %d | Entradas: %d | Gremios: %d",
-		result.Characters, result.DLUsages, result.Transactions,
-		result.CostOfLivings, result.Registries, result.Missions,
-		result.MissionEntries, result.Guilds,
+		"Personajes: %d (%d omitidos) | Usos de DL: %d (%d omitidos) | Compras: %d (%d omitidos) | Costos de Vida: %d (%d omitidos) | Registros: %d (%d omitidos) | Misiones: %d (%d omitidos) | Entradas: %d (%d omitidos) | Gremios: %d (%d omitidos)",
+		result.Characters, result.CharactersSkipped,
+		result.DLUsages, result.DLUsagesSkipped,
+		result.Transactions, result.TransactionsSkipped,
+		result.CostOfLivings, result.CostOfLivingsSkipped,
+		result.Registries, result.RegistriesSkipped,
+		result.Missions, result.MissionsSkipped,
+		result.MissionEntries, result.MissionEntriesSkipped,
+		result.Guilds, result.GuildsSkipped,
 	)
 
 	render(c, http.StatusOK, "import.html", gin.H{
@@ -78,6 +84,5 @@ func ImportPostHandler(c *gin.Context) {
 		"ActiveMenu": "import",
 		"Result":     &result,
 		"Summary":    summary,
-		"Success":    success,
 	})
 }

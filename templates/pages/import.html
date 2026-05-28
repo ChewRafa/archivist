@@ -10,19 +10,19 @@
     {{end}}
 
     {{if .Result}}
-    <div class="notification {{if .Success}}is-success{{else}}is-warning{{end}}">
+    <div class="notification {{if .Result.Errors}}is-warning{{else}}is-success{{end}}">
         <strong>Resultado de la importación:</strong>
         <ul class="mt-2">
-            <li>Personajes: {{.Result.Characters}}</li>
-            <li>Usos de DL: {{.Result.DLUsages}}</li>
-            <li>Transacciones: {{.Result.Transactions}}</li>
-            <li>Costos de Vida: {{.Result.CostOfLivings}}</li>
-            <li>Registros de Personajes: {{.Result.Registries}}</li>
-            <li>Misiones: {{.Result.Missions}}</li>
-            <li>Entradas de Misión: {{.Result.MissionEntries}}</li>
-            <li>Gremios: {{.Result.Guilds}}</li>
+            <li>Personajes: {{.Result.Characters}} creados, {{.Result.CharactersSkipped}} omitidos</li>
+            <li>Usos de DL: {{.Result.DLUsages}} creados, {{.Result.DLUsagesSkipped}} omitidos</li>
+            <li>Transacciones: {{.Result.Transactions}} creadas, {{.Result.TransactionsSkipped}} omitidas</li>
+            <li>Costos de Vida: {{.Result.CostOfLivings}} creados, {{.Result.CostOfLivingsSkipped}} omitidos</li>
+            <li>Registros de Personajes: {{.Result.Registries}} creados, {{.Result.RegistriesSkipped}} omitidos</li>
+            <li>Misiones: {{.Result.Missions}} creadas, {{.Result.MissionsSkipped}} omitidas</li>
+            <li>Entradas de Misión: {{.Result.MissionEntries}} creadas, {{.Result.MissionEntriesSkipped}} omitidas</li>
+            <li>Gremios: {{.Result.Guilds}} creados, {{.Result.GuildsSkipped}} omitidos</li>
         </ul>
-        {{if not .Success}}
+        {{if .Result.Errors}}
         <hr>
         <strong>Errores:</strong>
         <ul>
@@ -40,11 +40,24 @@
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
         <div class="field">
+            <label class="label">Hojas a importar</label>
+            <div class="control">
+                {{range .Sheets}}
+                <label class="checkbox mr-4">
+                    <input type="checkbox" name="sheets" value="{{.Key}}" checked>
+                    {{.Name}}
+                </label>
+                <br>
+                {{end}}
+            </div>
+            <p class="help">Selecciona qué hojas del archivo Excel quieres importar. Desmarca las que quieras omitir.</p>
+        </div>
+
+        <div class="field">
             <label class="label">Archivo Excel</label>
             <div class="control">
                 <input class="input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
             </div>
-            <p class="help">Solo archivos .xlsx con las hojas en español: Lista de Personajes, Uso de DL, Compras, Costo de Vida, Registro de Personajes, Registro de Misiones, Gremios.</p>
         </div>
 
         <div class="field">

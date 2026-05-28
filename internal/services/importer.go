@@ -15,15 +15,70 @@ import (
 )
 
 type ImportResult struct {
-	Characters     int
-	DLUsages       int
-	Transactions   int
-	CostOfLivings  int
-	Registries     int
-	Missions       int
-	MissionEntries int
-	Guilds         int
-	Errors         []string
+	Characters        int
+	CharactersSkipped int
+	DLUsages          int
+	DLUsagesSkipped   int
+	Transactions      int
+	TransactionsSkipped int
+	CostOfLivings     int
+	CostOfLivingsSkipped int
+	Registries        int
+	RegistriesSkipped int
+	Missions          int
+	MissionsSkipped   int
+	MissionEntries    int
+	MissionEntriesSkipped int
+	Guilds            int
+	GuildsSkipped     int
+	Errors            []string
+}
+
+type ImportOptions struct {
+	Sheets []string
+}
+
+var sheetKeyToName = map[string]string{
+	"characters":  "Lista de Personajes",
+	"dlusages":    "Uso de DL",
+	"transactions": "Compras",
+	"costofliving": "Costo de Vida",
+	"registry":    "Registro de Personajes",
+	"missions":    "Registro de Misiones",
+	"guilds":      "Gremios",
+}
+
+var allSheetKeys = func() []string {
+	keys := make([]string, 0, len(sheetKeyToName))
+	for k := range sheetKeyToName {
+		keys = append(keys, k)
+	}
+	return keys
+}()
+
+type SheetInfo struct {
+	Key  string
+	Name string
+}
+
+var allSheetInfo = func() []SheetInfo {
+	return []SheetInfo{
+		{Key: "characters", Name: sheetKeyToName["characters"]},
+		{Key: "dlusages", Name: sheetKeyToName["dlusages"]},
+		{Key: "transactions", Name: sheetKeyToName["transactions"]},
+		{Key: "costofliving", Name: sheetKeyToName["costofliving"]},
+		{Key: "registry", Name: sheetKeyToName["registry"]},
+		{Key: "missions", Name: sheetKeyToName["missions"]},
+		{Key: "guilds", Name: sheetKeyToName["guilds"]},
+	}
+}()
+
+func AllSheetKeys() []string {
+	return allSheetKeys
+}
+
+func AllSheetInfo() []SheetInfo {
+	return allSheetInfo
 }
 
 var weekHeaderRe = regexp.MustCompile(`(?i)^semana\s+del\s+(\d{1,2})\s+al\s+\d{1,2}\s+de\s+(\w+)\s+de\s+(\d{4})`)
@@ -100,17 +155,48 @@ func parseInt(s string) int {
 	return int(parseFloat(s))
 }
 
-func ImportExcel(f *excelize.File) ImportResult {
+func shouldImportSheet(opts *ImportOptions, key string) bool {
+	if opts == nil || len(opts.Sheets) == 0 {
+		return true
+	}
+	for _, s := range opts.Sheets {
+		if s == key {
+			return true
+		}
+	}
+	return false
+}
+
+func ImportExcel(f *excelize.File, opts ...ImportOptions) ImportResult {
 	var result ImportResult
 
+	var opt *ImportOptions
+	if len(opts) > 0 {
+		opt = &opts[0]
+	}
+
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
-		importCharacters(tx, f, &result)
-		importDLUsages(tx, f, &result)
-		importTransactions(tx, f, &result)
-		importCostOfLiving(tx, f, &result)
-		importCharacterRegistry(tx, f, &result)
-		importMissions(tx, f, &result)
-		importGuilds(tx, f, &result)
+		if shouldImportSheet(opt, "characters") {
+			importCharacters(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "dlusages") {
+			importDLUsages(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "transactions") {
+			importTransactions(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "costofliving") {
+			importCostOfLiving(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "registry") {
+			importCharacterRegistry(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "missions") {
+			importMissions(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "guilds") {
+			importGuilds(tx, f, &result)
+		}
 		return nil
 	})
 	if err != nil {
@@ -158,7 +244,13 @@ func importCharacters(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			GuildName: guildName,
 		}
 
-		tx.Where("name = ?", character.Name).FirstOrCreate(&character)
+		var existing models.Character
+		err := tx.Where("name = ?", character.Name).First(&existing).Error
+		if err == nil {
+			result.CharactersSkipped++
+			continue
+		}
+		tx.Create(&character)
 		result.Characters++
 	}
 }
@@ -220,6 +312,13 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			Description: desc,
 		}
 
+		var existing models.DLUsage
+		err := tx.Where("date = ? AND character_id = ? AND dl_used = ? AND description = ?",
+			usage.Date, usage.CharacterID, usage.DLUsed, usage.Description).First(&existing).Error
+		if err == nil {
+			result.DLUsagesSkipped++
+			continue
+		}
 		tx.Create(&usage)
 		result.DLUsages++
 	}
@@ -266,6 +365,13 @@ func importTransactions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			Notes:       strings.TrimSpace(row[3]),
 		}
 
+		var existing models.Transaction
+		err := tx.Where("date = ? AND character_id = ? AND amount = ? AND notes = ?",
+			txEntry.Date, txEntry.CharacterID, txEntry.Amount, txEntry.Notes).First(&existing).Error
+		if err == nil {
+			result.TransactionsSkipped++
+			continue
+		}
 		tx.Create(&txEntry)
 		result.Transactions++
 	}
@@ -343,6 +449,13 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				Amount:      amount,
 			}
 
+			var existing models.CostOfLiving
+			err := tx.Where("date = ? AND character_id = ? AND amount = ?",
+				cost.Date, cost.CharacterID, cost.Amount).First(&existing).Error
+			if err == nil {
+				result.CostOfLivingsSkipped++
+				continue
+			}
 			tx.Create(&cost)
 			result.CostOfLivings++
 		}
@@ -397,6 +510,13 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 			registry.Notes = strings.TrimSpace(row[6])
 		}
 
+		var existing models.CharacterRegistry
+		err := tx.Where("date = ? AND character_id = ? AND event = ?",
+			registry.Date, registry.CharacterID, registry.Event).First(&existing).Error
+		if err == nil {
+			result.RegistriesSkipped++
+			continue
+		}
 		tx.Create(&registry)
 		result.Registries++
 	}
@@ -435,9 +555,18 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 					DM:   dm,
 					Name: eventName,
 				}
-				tx.Create(&mission)
-				currentMission = &mission
-				result.Missions++
+
+				var existing models.Mission
+				err := tx.Where("date = ? AND dm = ? AND name = ?",
+					mission.Date, mission.DM, mission.Name).First(&existing).Error
+				if err == nil {
+					currentMission = &existing
+					result.MissionsSkipped++
+				} else {
+					tx.Create(&mission)
+					currentMission = &mission
+					result.Missions++
+				}
 			}
 		}
 
@@ -478,6 +607,13 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			entry.Notes = strings.TrimSpace(row[10])
 		}
 
+		var existing models.MissionEntry
+		err := tx.Where("mission_id = ? AND character_id = ?",
+			entry.MissionID, entry.CharacterID).First(&existing).Error
+		if err == nil {
+			result.MissionEntriesSkipped++
+			continue
+		}
 		tx.Create(&entry)
 		result.MissionEntries++
 	}
@@ -547,9 +683,16 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				}
 			}
 
-			tx.Where("name = ?", guild.Name).FirstOrCreate(guild)
-			guildMap[guildName] = guild
-			result.Guilds++
+			var existing models.Guild
+			err := tx.Where("name = ?", guild.Name).First(&existing).Error
+			if err == nil {
+				guildMap[guildName] = &existing
+				result.GuildsSkipped++
+			} else {
+				tx.Create(guild)
+				guildMap[guildName] = guild
+				result.Guilds++
+			}
 		}
 
 		if memberName != "" {

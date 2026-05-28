@@ -1,9 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
-	"os"
+	"strings"
 
 	"codeberg.org/chewrafa/archivist/internal/db"
 	"codeberg.org/chewrafa/archivist/internal/services"
@@ -11,28 +12,40 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Usage: importer <path-to-excel-file>")
+	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds")
+	flag.Parse()
+
+	if flag.NArg() < 1 {
+		log.Fatal("Usage: importer [--sheets=...] <path-to-excel-file>")
 	}
 
 	db.Init("data/archivist.db")
 
-	f, err := excelize.OpenFile(os.Args[1])
+	f, err := excelize.OpenFile(flag.Arg(0))
 	if err != nil {
 		log.Fatal("Failed to open Excel file: ", err)
 	}
 	defer f.Close()
 
-	result := services.ImportExcel(f)
+	var opts []services.ImportOptions
+	if *sheetsFlag != "" {
+		sheets := strings.Split(*sheetsFlag, ",")
+		for i := range sheets {
+			sheets[i] = strings.TrimSpace(sheets[i])
+		}
+		opts = append(opts, services.ImportOptions{Sheets: sheets})
+	}
 
-	fmt.Printf("Characters: %d\n", result.Characters)
-	fmt.Printf("DL Usages: %d\n", result.DLUsages)
-	fmt.Printf("Transactions: %d\n", result.Transactions)
-	fmt.Printf("Cost of Livings: %d\n", result.CostOfLivings)
-	fmt.Printf("Character Registries: %d\n", result.Registries)
-	fmt.Printf("Missions: %d\n", result.Missions)
-	fmt.Printf("Mission Entries: %d\n", result.MissionEntries)
-	fmt.Printf("Guilds: %d\n", result.Guilds)
+	result := services.ImportExcel(f, opts...)
+
+	fmt.Printf("Characters: %d (skipped %d)\n", result.Characters, result.CharactersSkipped)
+	fmt.Printf("DL Usages: %d (skipped %d)\n", result.DLUsages, result.DLUsagesSkipped)
+	fmt.Printf("Transactions: %d (skipped %d)\n", result.Transactions, result.TransactionsSkipped)
+	fmt.Printf("Cost of Livings: %d (skipped %d)\n", result.CostOfLivings, result.CostOfLivingsSkipped)
+	fmt.Printf("Character Registries: %d (skipped %d)\n", result.Registries, result.RegistriesSkipped)
+	fmt.Printf("Missions: %d (skipped %d)\n", result.Missions, result.MissionsSkipped)
+	fmt.Printf("Mission Entries: %d (skipped %d)\n", result.MissionEntries, result.MissionEntriesSkipped)
+	fmt.Printf("Guilds: %d (skipped %d)\n", result.Guilds, result.GuildsSkipped)
 
 	if len(result.Errors) > 0 {
 		fmt.Println("\nErrors:")

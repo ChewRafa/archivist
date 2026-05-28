@@ -24,10 +24,10 @@ type Character struct {
 
 type DLUsage struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	Date        time.Time `gorm:"index" json:"date"`
-	CharacterID uint      `gorm:"index" json:"character_id"`
+	Date        time.Time `gorm:"index;uniqueIndex:idx_dl_usage_unique" json:"date"`
+	CharacterID uint      `gorm:"index;uniqueIndex:idx_dl_usage_unique" json:"character_id"`
 	Character   Character `gorm:"foreignKey:CharacterID" json:"character"`
-	DLUsed      int       `json:"dl_used"`
+	DLUsed      int       `gorm:"uniqueIndex:idx_dl_usage_unique" json:"dl_used"`
 	GoldChange  float64   `json:"gold_change"`
 	Description string    `gorm:"type:text" json:"description"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -35,30 +35,30 @@ type DLUsage struct {
 
 type Transaction struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	Date        time.Time `gorm:"index" json:"date"`
-	CharacterID uint      `gorm:"index" json:"character_id"`
+	Date        time.Time `gorm:"index;uniqueIndex:idx_transaction_unique" json:"date"`
+	CharacterID uint      `gorm:"index;uniqueIndex:idx_transaction_unique" json:"character_id"`
 	Character   Character `gorm:"foreignKey:CharacterID" json:"character"`
-	Amount      float64   `json:"amount"`
+	Amount      float64   `gorm:"uniqueIndex:idx_transaction_unique" json:"amount"`
 	Notes       string    `gorm:"type:text" json:"notes"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
 type CostOfLiving struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	Date        time.Time `gorm:"index" json:"date"`
-	CharacterID uint      `gorm:"index" json:"character_id"`
+	Date        time.Time `gorm:"index;uniqueIndex:idx_col_unique" json:"date"`
+	CharacterID uint      `gorm:"index;uniqueIndex:idx_col_unique" json:"character_id"`
 	Character   Character `gorm:"foreignKey:CharacterID" json:"character"`
-	Amount      float64   `json:"amount"`
+	Amount      float64   `gorm:"uniqueIndex:idx_col_unique" json:"amount"`
 	Notes       string    `gorm:"type:text" json:"notes"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
 type CharacterRegistry struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
-	Date        time.Time `gorm:"index" json:"date"`
-	CharacterID uint      `gorm:"index" json:"character_id"`
+	Date        time.Time `gorm:"index;uniqueIndex:idx_registry_unique" json:"date"`
+	CharacterID uint      `gorm:"index;uniqueIndex:idx_registry_unique" json:"character_id"`
 	Character   Character `gorm:"foreignKey:CharacterID" json:"character"`
-	Event       string    `gorm:"size:255" json:"event"`
+	Event       string    `gorm:"size:255;uniqueIndex:idx_registry_unique" json:"event"`
 	Experience  float64   `json:"experience"`
 	Gold        float64   `json:"gold"`
 	Renown      float64   `json:"renown"`
@@ -67,13 +67,13 @@ type CharacterRegistry struct {
 }
 
 type Mission struct {
-	ID         uint           `gorm:"primaryKey" json:"id"`
-	Date       time.Time      `gorm:"index" json:"date"`
-	DM         string         `gorm:"size:255" json:"dm"`
-	Name       string         `gorm:"size:255" json:"name"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-	CreatedAt  time.Time      `json:"created_at"`
-	Entries    []MissionEntry `gorm:"foreignKey:MissionID" json:"entries"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Date      time.Time      `gorm:"index" json:"date"`
+	DM        string         `gorm:"size:255" json:"dm"`
+	Name      string         `gorm:"size:255" json:"name"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	Entries   []MissionEntry `gorm:"foreignKey:MissionID" json:"entries"`
 }
 
 type MissionEntry struct {
