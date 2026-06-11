@@ -18,8 +18,9 @@ Go 1.25.5 web app for TTRPG character/guild tracking. Single module, no monorepo
 cmd/server/main.go      → Gin HTTP server (release mode by default)
 cmd/importer/main.go    → one-shot Excel → SQLite importer
 internal/db/db.go       → GORM + SQLite, path: data/archivist.db
-internal/models/        → 9 models: User, Character, DLUsage, Transaction,
-                          CostOfLiving, CharacterRegistry, Mission, MissionEntry, Guild
+internal/models/        → 10 models: User, Character, DLUsage, Transaction,
+                          CostOfLiving, CharacterRegistry, Mission, MissionEntry, Guild,
+                          GuildTransaction
 internal/services/      → business logic: XP/level, gold/DL/renown calculations + auth
 internal/handlers/      → Gin route setup, CRUD handlers, auth, middleware, render
 templates/base.html     → Base layout with sidebar, auth status, CSRF
@@ -36,7 +37,8 @@ static/                 → CSS and other static assets
 - **Auth**: session cookies via `gin-contrib/sessions` + cookie store. All routes except `/login` and `/static` require authentication.
 - **CSRF**: token stored in session, validated on all POST/PUT/DELETE requests. Every form includes `<input type="hidden" name="csrf_token" value="{{.CSRFToken}}">`.
 - **SQLite file**: `data/archivist.db` — relative to working directory
-- **Excel importer** reads Spanish sheet names (e.g. "Lista de Personajes", "Conteo de DL")
+- **Excel importer** reads Spanish sheet names (e.g. "Lista de Personajes", "Uso de DL", "Economía de Gremios")
+- **Guild treasury** (`Arcas`) is synced from the sum of `GuildTransaction` rows
 
 ## Routes
 `/login` `/logout` `/` `/characters` `/characters/detail/:id` `/missions` `/missions/detail/:id`

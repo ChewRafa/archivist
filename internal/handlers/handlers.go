@@ -24,19 +24,59 @@ func IndexHandler(c *gin.Context) {
 	stats, _ := services.GetAllCharactersWithStats()
 
 	activeCount := 0
-	levelDist := make(map[int]int)
-	classDist := make(map[string]int)
-	speciesDist := make(map[string]int)
+	// Mapas temporales para hacer el conteo bruto
+	rawLevelDist := make(map[int]int)
+	rawClassDist := make(map[string]int)
+	rawSpeciesDist := make(map[string]int)
 
 	for _, s := range stats {
 		if s.Status == "Activo" {
 			activeCount++
 		}
-		levelDist[s.Level]++
-		classDist[s.Class]++
-		speciesDist[s.Species]++
+		rawLevelDist[s.Level]++
+		rawClassDist[s.Class]++
+		rawSpeciesDist[s.Species]++
 	}
 
+	// Estructura interna para empaquetar el conteo junto a su porcentaje lineal
+	type ChartItem struct {
+		Count      int
+		Percentage float64
+	}
+
+	total := float64(len(stats))
+
+	// Procesamos la distribución por Nivel
+	levelDist := make(map[int]ChartItem)
+	for lvl, count := range rawLevelDist {
+		pct := 0.0
+		if total > 0 {
+			pct = (float64(count) / total) * 100
+		}
+		levelDist[lvl] = ChartItem{Count: count, Percentage: pct}
+	}
+
+	// Procesamos la distribución por Clase
+	classDist := make(map[string]ChartItem)
+	for class, count := range rawClassDist {
+		pct := 0.0
+		if total > 0 {
+			pct = (float64(count) / total) * 100
+		}
+		classDist[class] = ChartItem{Count: count, Percentage: pct}
+	}
+
+	// Procesamos la distribución por Raza/Especie
+	speciesDist := make(map[string]ChartItem)
+	for species, count := range rawSpeciesDist {
+		pct := 0.0
+		if total > 0 {
+			pct = (float64(count) / total) * 100
+		}
+		speciesDist[species] = ChartItem{Count: count, Percentage: pct}
+	}
+
+	// Tus consultas de GORM se quedan exactamente igual
 	var recentMissions []models.Mission
 	db.DB.Order("date DESC").Limit(5).Preload("Entries").Find(&recentMissions)
 
@@ -51,9 +91,9 @@ func IndexHandler(c *gin.Context) {
 		"Stats":              stats,
 		"ActiveCount":        activeCount,
 		"TotalCount":         len(stats),
-		"LevelDist":          levelDist,
-		"ClassDist":          classDist,
-		"SpeciesDist":        speciesDist,
+		"LevelDist":          levelDist,   // Ahora envía el mapa con objetos ChartItem
+		"ClassDist":          classDist,   // Ahora envía el mapa con objetos ChartItem
+		"SpeciesDist":        speciesDist, // Ahora envía el mapa con objetos ChartItem
 		"RecentMissions":     recentMissions,
 		"RecentDLUsages":     recentDLUsages,
 		"RecentTransactions": recentTransactions,
@@ -233,7 +273,7 @@ func DLUsageUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "dl-usage-form.html", gin.H{
 			"Title":       "Editar Uso de DL",
-		"ActiveMenu":  "dl",
+			"ActiveMenu":  "dl",
 			"Action":      "/dl/usages/" + id,
 			"SubmitLabel": "Actualizar",
 			"Form":        form,
@@ -249,7 +289,7 @@ func DLUsageUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "dl-usage-form.html", gin.H{
 			"Title":       "Editar Uso de DL",
-		"ActiveMenu":  "dl",
+			"ActiveMenu":  "dl",
 			"Action":      "/dl/usages/" + id,
 			"SubmitLabel": "Actualizar",
 			"Form":        form,
@@ -276,7 +316,7 @@ func DLUsageUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "dl-usage-form.html", gin.H{
 			"Title":       "Editar Uso de DL",
-		"ActiveMenu":  "dl",
+			"ActiveMenu":  "dl",
 			"Action":      "/dl/usages/" + id,
 			"SubmitLabel": "Actualizar",
 			"Form":        form,
@@ -378,7 +418,7 @@ func TransactionUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "transaction-form.html", gin.H{
 			"Title":       "Editar Transacción",
-		"ActiveMenu":  "transactions",
+			"ActiveMenu":  "transactions",
 			"Action":      "/transactions/detail/" + id,
 			"SubmitLabel": "Actualizar Transacción",
 			"Form":        form,
@@ -394,7 +434,7 @@ func TransactionUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "transaction-form.html", gin.H{
 			"Title":       "Editar Transacción",
-		"ActiveMenu":  "transactions",
+			"ActiveMenu":  "transactions",
 			"Action":      "/transactions/detail/" + id,
 			"SubmitLabel": "Actualizar Transacción",
 			"Form":        form,
@@ -420,7 +460,7 @@ func TransactionUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "transaction-form.html", gin.H{
 			"Title":       "Editar Transacción",
-		"ActiveMenu":  "transactions",
+			"ActiveMenu":  "transactions",
 			"Action":      "/transactions/detail/" + id,
 			"SubmitLabel": "Actualizar Transacción",
 			"Form":        form,
@@ -455,9 +495,14 @@ type GuildFormData struct {
 	HallType     string
 	Notes        string
 	CostOfLiving float64
-	Treasury     float64
 	RegisteredAt string
 	ApprovedAt   string
+}
+
+type GuildTransactionFormData struct {
+	Date   string
+	Amount float64
+	Notes  string
 }
 
 func GuildNewHandler(c *gin.Context) {
@@ -482,7 +527,6 @@ func GuildCreateHandler(c *gin.Context) {
 		HallType:     c.PostForm("hall_type"),
 		Notes:        c.PostForm("notes"),
 		CostOfLiving: parseFloat(c.PostForm("cost_of_living")),
-		Treasury:     parseFloat(c.PostForm("treasury")),
 		RegisteredAt: c.PostForm("registered_at"),
 		ApprovedAt:   c.PostForm("approved_at"),
 	}
@@ -492,7 +536,7 @@ func GuildCreateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "guild-form.html", gin.H{
 			"Title":       "Nuevo Gremio",
-		"ActiveMenu":  "guilds",
+			"ActiveMenu":  "guilds",
 			"Action":      "/guilds",
 			"SubmitLabel": "Crear Gremio",
 			"Form":        form,
@@ -503,11 +547,10 @@ func GuildCreateHandler(c *gin.Context) {
 	}
 
 	guild := models.Guild{
-		Name:        form.Name,
-		HallType:    form.HallType,
-		Notes:       form.Notes,
+		Name:         form.Name,
+		HallType:     form.HallType,
+		Notes:        form.Notes,
 		CostOfLiving: form.CostOfLiving,
-		Treasury:    form.Treasury,
 	}
 
 	if form.LeaderID != 0 {
@@ -533,7 +576,7 @@ func GuildCreateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "guild-form.html", gin.H{
 			"Title":       "Nuevo Gremio",
-		"ActiveMenu":  "guilds",
+			"ActiveMenu":  "guilds",
 			"Action":      "/guilds",
 			"SubmitLabel": "Crear Gremio",
 			"Form":        form,
@@ -554,10 +597,14 @@ func GuildDetailHandler(c *gin.Context) {
 		return
 	}
 
+	var transactions []models.GuildTransaction
+	db.DB.Where("guild_id = ?", guild.ID).Order("date DESC").Find(&transactions)
+
 	render(c, http.StatusOK, "guild-detail.html", gin.H{
-		"Title": guild.Name,
-		"ActiveMenu":  "guilds",
-		"Guild": guild,
+		"Title":        guild.Name,
+		"ActiveMenu":   "guilds",
+		"Guild":        guild,
+		"Transactions": transactions,
 	})
 }
 
@@ -577,7 +624,6 @@ func GuildEditHandler(c *gin.Context) {
 		HallType:     guild.HallType,
 		Notes:        guild.Notes,
 		CostOfLiving: guild.CostOfLiving,
-		Treasury:     guild.Treasury,
 	}
 
 	if guild.LeaderID != nil {
@@ -599,6 +645,8 @@ func GuildEditHandler(c *gin.Context) {
 		"SubmitLabel": "Actualizar Gremio",
 		"Form":        form,
 		"Characters":  characters,
+		"IsEdit":      true,
+		"Treasury":    guild.Treasury,
 		"Error":       "",
 	})
 }
@@ -611,7 +659,6 @@ func GuildUpdateHandler(c *gin.Context) {
 		HallType:     c.PostForm("hall_type"),
 		Notes:        c.PostForm("notes"),
 		CostOfLiving: parseFloat(c.PostForm("cost_of_living")),
-		Treasury:     parseFloat(c.PostForm("treasury")),
 		RegisteredAt: c.PostForm("registered_at"),
 		ApprovedAt:   c.PostForm("approved_at"),
 	}
@@ -621,7 +668,7 @@ func GuildUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusBadRequest, "guild-form.html", gin.H{
 			"Title":       "Editar Gremio",
-		"ActiveMenu":  "guilds",
+			"ActiveMenu":  "guilds",
 			"Action":      "/guilds/detail/" + id,
 			"SubmitLabel": "Actualizar Gremio",
 			"Form":        form,
@@ -641,7 +688,6 @@ func GuildUpdateHandler(c *gin.Context) {
 	guild.HallType = form.HallType
 	guild.Notes = form.Notes
 	guild.CostOfLiving = form.CostOfLiving
-	guild.Treasury = form.Treasury
 
 	if form.LeaderID != 0 {
 		guild.LeaderID = &form.LeaderID
@@ -672,7 +718,7 @@ func GuildUpdateHandler(c *gin.Context) {
 		db.DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "guild-form.html", gin.H{
 			"Title":       "Editar Gremio",
-		"ActiveMenu":  "guilds",
+			"ActiveMenu":  "guilds",
 			"Action":      "/guilds/detail/" + id,
 			"SubmitLabel": "Actualizar Gremio",
 			"Form":        form,
@@ -687,8 +733,155 @@ func GuildUpdateHandler(c *gin.Context) {
 
 func GuildDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
+	db.DB.Where("guild_id = ?", id).Delete(&models.GuildTransaction{})
 	db.DB.Delete(&models.Guild{}, id)
 	c.Redirect(http.StatusFound, "/guilds")
+}
+
+func GuildTransactionCreateHandler(c *gin.Context) {
+	guildID := c.Param("id")
+	date := c.PostForm("date")
+	amount := parseFloat(c.PostForm("amount"))
+	notes := c.PostForm("notes")
+
+	if date == "" {
+		c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+		return
+	}
+
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+		return
+	}
+
+	gid := parseUint(guildID)
+	entry := models.GuildTransaction{
+		Date:    parsed,
+		GuildID: gid,
+		Amount:  amount,
+		Notes:   notes,
+	}
+
+	db.DB.Transaction(func(tx *gorm.DB) error {
+		_, err := services.CreateGuildTransaction(tx, entry)
+		return err
+	})
+
+	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+}
+
+func GuildTransactionEditHandler(c *gin.Context) {
+	guildID := c.Param("id")
+	txID := c.Param("txId")
+
+	var entry models.GuildTransaction
+	if err := db.DB.Where("id = ? AND guild_id = ?", txID, guildID).First(&entry).Error; err != nil {
+		c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+		return
+	}
+
+	var guild models.Guild
+	if err := db.DB.First(&guild, guildID).Error; err != nil {
+		c.Redirect(http.StatusFound, "/guilds")
+		return
+	}
+
+	render(c, http.StatusOK, "guild-transaction-form.html", gin.H{
+		"Title":       "Editar Movimiento de Arcas",
+		"ActiveMenu":  "guilds",
+		"Guild":       guild,
+		"Action":      "/guilds/detail/" + guildID + "/transactions/" + txID,
+		"SubmitLabel": "Actualizar Movimiento",
+		"Form": GuildTransactionFormData{
+			Date:   entry.Date.Format("2006-01-02"),
+			Amount: entry.Amount,
+			Notes:  entry.Notes,
+		},
+		"Error": "",
+	})
+}
+
+func GuildTransactionUpdateHandler(c *gin.Context) {
+	guildID := c.Param("id")
+	txID := c.Param("txId")
+	form := GuildTransactionFormData{
+		Date:   c.PostForm("date"),
+		Amount: parseFloat(c.PostForm("amount")),
+		Notes:  c.PostForm("notes"),
+	}
+
+	var guild models.Guild
+	if err := db.DB.First(&guild, guildID).Error; err != nil {
+		c.Redirect(http.StatusFound, "/guilds")
+		return
+	}
+
+	if form.Date == "" {
+		render(c, http.StatusBadRequest, "guild-transaction-form.html", gin.H{
+			"Title":       "Editar Movimiento de Arcas",
+			"ActiveMenu":  "guilds",
+			"Guild":       guild,
+			"Action":      "/guilds/detail/" + guildID + "/transactions/" + txID,
+			"SubmitLabel": "Actualizar Movimiento",
+			"Form":        form,
+			"Error":       "La fecha es obligatoria",
+		})
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", form.Date)
+	if err != nil {
+		render(c, http.StatusBadRequest, "guild-transaction-form.html", gin.H{
+			"Title":       "Editar Movimiento de Arcas",
+			"ActiveMenu":  "guilds",
+			"Guild":       guild,
+			"Action":      "/guilds/detail/" + guildID + "/transactions/" + txID,
+			"SubmitLabel": "Actualizar Movimiento",
+			"Form":        form,
+			"Error":       "Fecha inválida",
+		})
+		return
+	}
+
+	var entry models.GuildTransaction
+	if err := db.DB.Where("id = ? AND guild_id = ?", txID, guildID).First(&entry).Error; err != nil {
+		c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+		return
+	}
+
+	entry.Date = date
+	entry.Amount = form.Amount
+	entry.Notes = form.Notes
+
+	db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&entry).Error; err != nil {
+			return err
+		}
+		return services.SyncGuildTreasury(tx, entry.GuildID)
+	})
+
+	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+}
+
+func GuildTransactionDeleteHandler(c *gin.Context) {
+	guildID := c.Param("id")
+	txID := c.Param("txId")
+
+	var entry models.GuildTransaction
+	if err := db.DB.Where("id = ? AND guild_id = ?", txID, guildID).First(&entry).Error; err != nil {
+		c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
+		return
+	}
+
+	db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&entry).Error; err != nil {
+			return err
+		}
+		return services.SyncGuildTreasury(tx, entry.GuildID)
+	})
+
+	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
 }
 
 type MissionFormData struct {
@@ -728,7 +921,7 @@ func MissionCreateHandler(c *gin.Context) {
 	if form.Name == "" || form.DM == "" {
 		render(c, http.StatusBadRequest, "mission-form.html", gin.H{
 			"Title":       "Nueva Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions",
 			"SubmitLabel": "Crear Misión",
 			"Form":        form,
@@ -741,7 +934,7 @@ func MissionCreateHandler(c *gin.Context) {
 	if err != nil {
 		render(c, http.StatusBadRequest, "mission-form.html", gin.H{
 			"Title":       "Nueva Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions",
 			"SubmitLabel": "Crear Misión",
 			"Form":        form,
@@ -759,7 +952,7 @@ func MissionCreateHandler(c *gin.Context) {
 	if err := db.DB.Create(&mission).Error; err != nil {
 		render(c, http.StatusInternalServerError, "mission-form.html", gin.H{
 			"Title":       "Nueva Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions",
 			"SubmitLabel": "Crear Misión",
 			"Form":        form,
@@ -786,7 +979,7 @@ func MissionDetailHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "mission-detail.html", gin.H{
 		"Title":      mission.Name,
-		"ActiveMenu":  "missions",
+		"ActiveMenu": "missions",
 		"Mission":    mission,
 		"Characters": characters,
 		"EntryForm":  MissionEntryFormData{},
@@ -827,7 +1020,7 @@ func MissionUpdateHandler(c *gin.Context) {
 	if form.Name == "" || form.DM == "" {
 		render(c, http.StatusBadRequest, "mission-form.html", gin.H{
 			"Title":       "Editar Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions/detail/" + id,
 			"SubmitLabel": "Actualizar Misión",
 			"Form":        form,
@@ -840,7 +1033,7 @@ func MissionUpdateHandler(c *gin.Context) {
 	if err != nil {
 		render(c, http.StatusBadRequest, "mission-form.html", gin.H{
 			"Title":       "Editar Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions/detail/" + id,
 			"SubmitLabel": "Actualizar Misión",
 			"Form":        form,
@@ -862,7 +1055,7 @@ func MissionUpdateHandler(c *gin.Context) {
 	if err := db.DB.Save(&mission).Error; err != nil {
 		render(c, http.StatusInternalServerError, "mission-form.html", gin.H{
 			"Title":       "Editar Misión",
-		"ActiveMenu":  "missions",
+			"ActiveMenu":  "missions",
 			"Action":      "/missions/detail/" + id,
 			"SubmitLabel": "Actualizar Misión",
 			"Form":        form,
@@ -932,7 +1125,7 @@ func MissionEntryEditHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "mission-entry-form.html", gin.H{
 		"Title":      "Editar Entrada de Misión",
-		"ActiveMenu":  "missions",
+		"ActiveMenu": "missions",
 		"Mission":    mission,
 		"Entry":      entry,
 		"Characters": characters,
@@ -1015,7 +1208,7 @@ func CharacterCreateHandler(c *gin.Context) {
 	if form.Name == "" {
 		render(c, http.StatusBadRequest, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters",
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
@@ -1028,7 +1221,7 @@ func CharacterCreateHandler(c *gin.Context) {
 	if err := db.DB.Unscoped().Where("name = ? AND deleted_at IS NULL", form.Name).First(&existing).Error; err == nil {
 		render(c, http.StatusConflict, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters",
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
@@ -1052,7 +1245,7 @@ func CharacterCreateHandler(c *gin.Context) {
 	if err := db.DB.Create(&character).Error; err != nil {
 		render(c, http.StatusInternalServerError, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters",
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
@@ -1110,7 +1303,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 	if form.Name == "" {
 		render(c, http.StatusBadRequest, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters/detail/" + id,
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
@@ -1123,7 +1316,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 	if err := db.DB.Unscoped().Where("name = ? AND deleted_at IS NULL AND id != ?", form.Name, id).First(&existing).Error; err == nil {
 		render(c, http.StatusConflict, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters/detail/" + id,
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
@@ -1151,7 +1344,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 	if err := db.DB.Save(&character).Error; err != nil {
 		render(c, http.StatusInternalServerError, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
-		"ActiveMenu":  "characters",
+			"ActiveMenu":  "characters",
 			"Action":      "/characters/detail/" + id,
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
@@ -1391,6 +1584,10 @@ func SetupRoutes(r *gin.Engine) {
 			gDetail.GET("/:id/edit", GuildEditHandler)
 			gDetail.POST("/:id", GuildUpdateHandler)
 			gDetail.POST("/:id/delete", GuildDeleteHandler)
+			gDetail.POST("/:id/transactions", GuildTransactionCreateHandler)
+			gDetail.GET("/:id/transactions/:txId/edit", GuildTransactionEditHandler)
+			gDetail.POST("/:id/transactions/:txId", GuildTransactionUpdateHandler)
+			gDetail.POST("/:id/transactions/:txId/delete", GuildTransactionDeleteHandler)
 		}
 	}
 }

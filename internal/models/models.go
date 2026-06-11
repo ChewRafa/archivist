@@ -7,19 +7,19 @@ import (
 )
 
 type Character struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Number    int       `json:"number"`
-	Player    string    `gorm:"size:255" json:"player"`
-	Name      string    `gorm:"size:255;uniqueIndex" json:"name"`
-	Status    string    `gorm:"size:50;default:'Activo'" json:"status"`
-	Species   string    `gorm:"size:100" json:"species"`
-	Class     string    `gorm:"size:100" json:"class"`
-	GuildName string    `gorm:"size:255" json:"guild_name"`
-	GuildRole string    `gorm:"size:100" json:"guild_role"`
-	Mount     string    `gorm:"size:100" json:"mount"`
+	ID        uint       `gorm:"primaryKey" json:"id"`
+	Number    int        `json:"number"`
+	Player    string     `gorm:"size:255" json:"player"`
+	Name      string     `gorm:"size:255;uniqueIndex" json:"name"`
+	Status    string     `gorm:"size:50;default:'Activo'" json:"status"`
+	Species   string     `gorm:"size:100" json:"species"`
+	Class     string     `gorm:"size:100" json:"class"`
+	GuildName string     `gorm:"size:255" json:"guild_name"`
+	GuildRole string     `gorm:"size:100" json:"guild_role"`
+	Mount     string     `gorm:"size:100" json:"mount"`
 	DeletedAt *time.Time `gorm:"index" json:"deleted_at"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 type DLUsage struct {
@@ -77,34 +77,44 @@ type Mission struct {
 }
 
 type MissionEntry struct {
-	ID            uint           `gorm:"primaryKey" json:"id"`
-	MissionID     uint           `gorm:"index" json:"mission_id"`
-	Mission       Mission        `gorm:"foreignKey:MissionID" json:"mission"`
-	CharacterID   uint           `gorm:"index" json:"character_id"`
-	Character     Character      `gorm:"foreignKey:CharacterID" json:"character"`
-	XPMission     float64        `json:"xp_mission"`
-	XPReport      float64        `json:"xp_report"`
-	XPGuild       float64        `json:"xp_guild"`
-	Gold          float64        `json:"gold"`
-	Renown        float64        `json:"renown"`
-	Notes         string         `gorm:"type:text" json:"notes"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-	CreatedAt     time.Time      `json:"created_at"`
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	MissionID   uint           `gorm:"index" json:"mission_id"`
+	Mission     Mission        `gorm:"foreignKey:MissionID" json:"mission"`
+	CharacterID uint           `gorm:"index" json:"character_id"`
+	Character   Character      `gorm:"foreignKey:CharacterID" json:"character"`
+	XPMission   float64        `json:"xp_mission"`
+	XPReport    float64        `json:"xp_report"`
+	XPGuild     float64        `json:"xp_guild"`
+	Gold        float64        `json:"gold"`
+	Renown      float64        `json:"renown"`
+	Notes       string         `gorm:"type:text" json:"notes"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	CreatedAt   time.Time      `json:"created_at"`
 }
 
 type Guild struct {
-	ID              uint      `gorm:"primaryKey" json:"id"`
-	Name            string    `gorm:"size:255;uniqueIndex" json:"name"`
-	LeaderID        *uint     `json:"leader_id"`
-	Leader          *Character `gorm:"foreignKey:LeaderID" json:"leader"`
-	MemberIDs       string    `gorm:"type:text" json:"-"`
-	HallType        string    `gorm:"size:100" json:"hall_type"`
-	Notes           string    `gorm:"type:text" json:"notes"`
-	CostOfLiving    float64   `json:"cost_of_living"`
-	Treasury        float64   `json:"treasury"`
-	RegisteredAt    *time.Time `json:"registered_at"`
-	ApprovedAt      *time.Time `json:"approved_at"`
-	Members         []Character `gorm:"many2many:guild_members;" json:"members"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID           uint        `gorm:"primaryKey" json:"id"`
+	Name         string      `gorm:"size:255;uniqueIndex" json:"name"`
+	LeaderID     *uint       `json:"leader_id"`
+	Leader       *Character  `gorm:"foreignKey:LeaderID" json:"leader"`
+	MemberIDs    string      `gorm:"type:text" json:"-"`
+	HallType     string      `gorm:"size:100" json:"hall_type"`
+	Notes        string      `gorm:"type:text" json:"notes"`
+	CostOfLiving float64     `json:"cost_of_living"`
+	Treasury     float64     `json:"treasury"`
+	RegisteredAt *time.Time  `json:"registered_at"`
+	ApprovedAt   *time.Time  `json:"approved_at"`
+	Members      []Character `gorm:"many2many:guild_members;" json:"members"`
+	CreatedAt    time.Time   `json:"created_at"`
+	UpdatedAt    time.Time   `json:"updated_at"`
+}
+
+type GuildTransaction struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Date      time.Time `gorm:"index;uniqueIndex:idx_guild_tx_unique" json:"date"`
+	GuildID   uint      `gorm:"index;uniqueIndex:idx_guild_tx_unique" json:"guild_id"`
+	Guild     Guild     `gorm:"foreignKey:GuildID" json:"guild"`
+	Amount    float64   `gorm:"uniqueIndex:idx_guild_tx_unique" json:"amount"`
+	Notes     string    `gorm:"type:text;uniqueIndex:idx_guild_tx_unique" json:"notes"`
+	CreatedAt time.Time `json:"created_at"`
 }

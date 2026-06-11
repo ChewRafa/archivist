@@ -15,23 +15,25 @@ import (
 )
 
 type ImportResult struct {
-	Characters        int
-	CharactersSkipped int
-	DLUsages          int
-	DLUsagesSkipped   int
-	Transactions      int
-	TransactionsSkipped int
-	CostOfLivings     int
-	CostOfLivingsSkipped int
-	Registries        int
-	RegistriesSkipped int
-	Missions          int
-	MissionsSkipped   int
-	MissionEntries    int
-	MissionEntriesSkipped int
-	Guilds            int
-	GuildsSkipped     int
-	Errors            []string
+	Characters               int
+	CharactersSkipped        int
+	DLUsages                 int
+	DLUsagesSkipped          int
+	Transactions             int
+	TransactionsSkipped      int
+	CostOfLivings            int
+	CostOfLivingsSkipped     int
+	Registries               int
+	RegistriesSkipped        int
+	Missions                 int
+	MissionsSkipped          int
+	MissionEntries           int
+	MissionEntriesSkipped    int
+	Guilds                   int
+	GuildsSkipped            int
+	GuildTransactions        int
+	GuildTransactionsSkipped int
+	Errors                   []string
 }
 
 type ImportOptions struct {
@@ -39,13 +41,14 @@ type ImportOptions struct {
 }
 
 var sheetKeyToName = map[string]string{
-	"characters":  "Lista de Personajes",
-	"dlusages":    "Uso de DL",
+	"characters":   "Lista de Personajes",
+	"dlusages":     "Uso de DL",
 	"transactions": "Compras",
 	"costofliving": "Costo de Vida",
-	"registry":    "Registro de Personajes",
-	"missions":    "Registro de Misiones",
-	"guilds":      "Gremios",
+	"registry":     "Registro de Personajes",
+	"missions":     "Registro de Misiones",
+	"guilds":       "Gremios",
+	"guildeconomy": "Economía de Gremios",
 }
 
 var allSheetKeys = func() []string {
@@ -70,6 +73,7 @@ var allSheetInfo = func() []SheetInfo {
 		{Key: "registry", Name: sheetKeyToName["registry"]},
 		{Key: "missions", Name: sheetKeyToName["missions"]},
 		{Key: "guilds", Name: sheetKeyToName["guilds"]},
+		{Key: "guildeconomy", Name: sheetKeyToName["guildeconomy"]},
 	}
 }()
 
@@ -96,6 +100,22 @@ var spanishMonths = map[string]time.Month{
 	"octubre":    time.October,
 	"noviembre":  time.November,
 	"diciembre":  time.December,
+}
+
+func parseExcelDate(s string) *time.Time {
+	if s == "" {
+		return nil
+	}
+	if dt := parseDate(s); dt != nil {
+		return dt
+	}
+	if v, err := strconv.ParseFloat(strings.TrimSpace(s), 64); err == nil {
+		t, err := excelize.ExcelDateToTime(v, false)
+		if err == nil {
+			return &t
+		}
+	}
+	return nil
 }
 
 func parseDate(s string) *time.Time {
@@ -144,6 +164,7 @@ func parseFloat(s string) float64 {
 	s = strings.TrimSpace(s)
 	s = strings.ReplaceAll(s, "=", "")
 	s = strings.ReplaceAll(s, "'", "")
+	s = strings.ReplaceAll(s, ",", "")
 	v, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0
@@ -196,6 +217,9 @@ func ImportExcel(f *excelize.File, opts ...ImportOptions) ImportResult {
 		}
 		if shouldImportSheet(opt, "guilds") {
 			importGuilds(tx, f, &result)
+		}
+		if shouldImportSheet(opt, "guildeconomy") {
+			importGuildEconomy(tx, f, &result)
 		}
 		return nil
 	})
@@ -661,16 +685,15 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			guild := &models.Guild{
 				Name:         guildName,
 				CostOfLiving: col,
-				Treasury:     treasury,
 				Notes:        notes,
 			}
 
-			regDate := parseDate(strings.TrimSpace(row[0]))
+			regDate := parseExcelDate(strings.TrimSpace(row[0]))
 			if regDate != nil {
 				guild.RegisteredAt = regDate
 			}
 
-			appDate := parseDate(strings.TrimSpace(row[1]))
+			appDate := parseExcelDate(strings.TrimSpace(row[1]))
 			if appDate != nil {
 				guild.ApprovedAt = appDate
 			}
@@ -693,6 +716,30 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				guildMap[guildName] = guild
 				result.Guilds++
 			}
+
+			if treasury != 0 {
+				seedDate := regDate
+				if seedDate == nil {
+					seedDate = appDate
+				}
+				if seedDate == nil {
+					now := time.Now()
+					seedDate = &now
+				}
+				created, err := CreateGuildTransaction(tx, models.GuildTransaction{
+					Date:    *seedDate,
+					GuildID: guildMap[guildName].ID,
+					Amount:  treasury,
+					Notes:   "Registro Inicial",
+				})
+				if err != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error seeding treasury for %s: %v", guildName, err))
+				} else if created {
+					result.GuildTransactions++
+				} else {
+					result.GuildTransactionsSkipped++
+				}
+			}
 		}
 
 		if memberName != "" {
@@ -706,6 +753,68 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 					}
 				}
 			}
+		}
+	}
+}
+
+func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
+	sheet := "Economía de Gremios"
+	rows, err := f.GetRows(sheet)
+	if err != nil {
+		result.Errors = append(result.Errors, fmt.Sprintf("Error reading %s: %v", sheet, err))
+		return
+	}
+
+	for i, row := range rows {
+		if i == 0 || len(row) < 3 {
+			continue
+		}
+
+		guildName := strings.TrimSpace(row[1])
+		if guildName == "" {
+			continue
+		}
+
+		var guild models.Guild
+		if err := tx.Where("name = ?", guildName).First(&guild).Error; err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Guild not found: %s", guildName))
+			continue
+		}
+
+		dateStr := strings.TrimSpace(row[0])
+		if dateStr == "" {
+			continue
+		}
+
+		dt := parseExcelDate(dateStr)
+		if dt == nil {
+			continue
+		}
+
+		amount := parseFloat(row[2])
+		if amount == 0 {
+			continue
+		}
+
+		notes := ""
+		if len(row) > 3 {
+			notes = strings.TrimSpace(row[3])
+		}
+
+		created, err := CreateGuildTransaction(tx, models.GuildTransaction{
+			Date:    *dt,
+			GuildID: guild.ID,
+			Amount:  amount,
+			Notes:   notes,
+		})
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild economy row %d: %v", i+1, err))
+			continue
+		}
+		if created {
+			result.GuildTransactions++
+		} else {
+			result.GuildTransactionsSkipped++
 		}
 	}
 }

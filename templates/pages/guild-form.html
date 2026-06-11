@@ -47,12 +47,15 @@
                     <input class="input" type="number" step="any" id="cost_of_living" name="cost_of_living" value="{{printf "%.2f" .Form.CostOfLiving}}">
                 </div>
             </div>
+            {{if .IsEdit}}
             <div class="field">
-                <label class="label" for="treasury">Arcas</label>
+                <label class="label">Arcas</label>
                 <div class="control">
-                    <input class="input" type="number" step="any" id="treasury" name="treasury" value="{{printf "%.2f" .Form.Treasury}}">
+                    <p class="input is-static gold-value">{{printf "%.2f" .Treasury}}</p>
                 </div>
+                <p class="help">Calculado a partir de los movimientos de economía del gremio.</p>
             </div>
+            {{end}}
         </div>
 
         <div class="form-row">

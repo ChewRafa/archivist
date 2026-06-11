@@ -235,6 +235,9 @@ The importer reads from an Excel file with Spanish sheet names:
 | `Registro de Personajes`    | Character registry/event log         |
 | `Registro de Misiones`      | Mission records                      |
 | `Gremios`                   | Guild records                        |
+| `Economía de Gremios`       | Guild treasury ledger (Arcas)        |
+
+Guild treasury (`Arcas`) is computed as the sum of all economy transactions for that guild.
 
 ## Development
 

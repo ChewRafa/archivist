@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds")
+	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds,guildeconomy")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -46,6 +46,7 @@ func main() {
 	fmt.Printf("Missions: %d (skipped %d)\n", result.Missions, result.MissionsSkipped)
 	fmt.Printf("Mission Entries: %d (skipped %d)\n", result.MissionEntries, result.MissionEntriesSkipped)
 	fmt.Printf("Guilds: %d (skipped %d)\n", result.Guilds, result.GuildsSkipped)
+	fmt.Printf("Guild Transactions: %d (skipped %d)\n", result.GuildTransactions, result.GuildTransactionsSkipped)
 
 	if len(result.Errors) > 0 {
 		fmt.Println("\nErrors:")

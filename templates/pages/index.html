@@ -31,13 +31,13 @@
         <div class="box">
             <p class="title is-4">Distribución por Nivel</p>
             <div class="level-bars">
-                {{range $level, $count := .LevelDist}}
+                {{range $level, $item := .LevelDist}}
                 <div class="level-bar">
                     <span class="level-label">Nv.{{$level}}</span>
                     <div class="bar-container">
-                        <div class="bar" style="width: {{mul $count 20}}%"></div>
+                        <div class="bar" style="width: {{printf "%.2f" $item.Percentage}}%"></div>
                     </div>
-                    <span class="bar-count">{{$count}}</span>
+                    <span class="bar-count">{{$item.Count}}</span>
                 </div>
                 {{end}}
             </div>
@@ -49,7 +49,7 @@
             <p class="title is-4">Distribución por Clase</p>
             <ul class="dist-list">
                 {{range $class, $count := .ClassDist}}
-                <li><span>{{$class}}</span><span class="count">{{$count}}</span></li>
+                <li><span>{{$class}}</span><span class="count">{{$count.Count}}</span></li>
                 {{end}}
             </ul>
         </div>
@@ -60,7 +60,7 @@
             <p class="title is-4">Distribución por Especie</p>
             <ul class="dist-list">
                 {{range $species, $count := .SpeciesDist}}
-                <li><span>{{$species}}</span><span class="count">{{$count}}</span></li>
+                <li><span>{{$species}}</span><span class="count">{{$count.Count}}</span></li>
                 {{end}}
             </ul>
         </div>

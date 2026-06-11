@@ -31,6 +31,7 @@ func Init(dbPath string) {
 	deduplicateTable("transactions", []string{"date", "character_id", "amount", "notes"})
 	deduplicateTable("cost_of_livings", []string{"date", "character_id", "amount"})
 	deduplicateTable("character_registries", []string{"date", "character_id", "event"})
+	deduplicateTable("guild_transactions", []string{"date", "guild_id", "amount", "notes"})
 
 	err = DB.AutoMigrate(
 		&models.User{},
@@ -42,6 +43,7 @@ func Init(dbPath string) {
 		&models.Mission{},
 		&models.MissionEntry{},
 		&models.Guild{},
+		&models.GuildTransaction{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database: ", err)

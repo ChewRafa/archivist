@@ -68,7 +68,7 @@ func ImportPostHandler(c *gin.Context) {
 	result := services.ImportExcel(f, opts...)
 
 	summary := fmt.Sprintf(
-		"Personajes: %d (%d omitidos) | Usos de DL: %d (%d omitidos) | Compras: %d (%d omitidos) | Costos de Vida: %d (%d omitidos) | Registros: %d (%d omitidos) | Misiones: %d (%d omitidos) | Entradas: %d (%d omitidos) | Gremios: %d (%d omitidos)",
+		"Personajes: %d (%d omitidos) | Usos de DL: %d (%d omitidos) | Compras: %d (%d omitidos) | Costos de Vida: %d (%d omitidos) | Registros: %d (%d omitidos) | Misiones: %d (%d omitidos) | Entradas: %d (%d omitidos) | Gremios: %d (%d omitidos) | Economía de Gremios: %d (%d omitidas)",
 		result.Characters, result.CharactersSkipped,
 		result.DLUsages, result.DLUsagesSkipped,
 		result.Transactions, result.TransactionsSkipped,
@@ -77,6 +77,7 @@ func ImportPostHandler(c *gin.Context) {
 		result.Missions, result.MissionsSkipped,
 		result.MissionEntries, result.MissionEntriesSkipped,
 		result.Guilds, result.GuildsSkipped,
+		result.GuildTransactions, result.GuildTransactionsSkipped,
 	)
 
 	render(c, http.StatusOK, "import.html", gin.H{

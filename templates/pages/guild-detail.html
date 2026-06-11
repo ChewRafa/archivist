@@ -69,4 +69,61 @@
     <p>Este gremio no tiene miembros.</p>
     {{end}}
 </div>
+
+<div class="box">
+    <p class="title is-4">Economía de Gremio</p>
+    <form method="POST" action="/guilds/detail/{{.Guild.ID}}/transactions" class="character-form" style="margin-bottom:1rem">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="form-row">
+            <div class="field">
+                <label class="label">Fecha</label>
+                <div class="control">
+                    <input class="input" type="date" name="date" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Monto</label>
+                <div class="control">
+                    <input class="input" type="number" name="amount" step="0.1" required>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Notas</label>
+                <div class="control">
+                    <input class="input" type="text" name="notes">
+                </div>
+            </div>
+            <div class="field" style="align-self:flex-end">
+                <div class="control">
+                    <button type="submit" class="button is-primary">Añadir</button>
+                </div>
+            </div>
+        </div>
+    </form>
+    {{if .Transactions}}
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+            {{range .Transactions}}
+            <tr>
+                <td>{{.Date.Format "2006-01-02"}}</td>
+                <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                <td>{{.Notes}}</td>
+                <td>
+                    <a href="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/edit" class="button is-small is-info">Editar</a>
+                    <form method="POST" action="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro?')">
+                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                        <button type="submit" class="button is-small is-danger">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p>No hay movimientos registrados.</p>
+    {{end}}
+</div>
 {{end}}
