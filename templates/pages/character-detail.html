@@ -1,161 +1,198 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Stats.Name}}</h1>
+    <div class="page-header-main">
+        <nav class="breadcrumbs">
+            <a href="/characters">Personajes</a>
+            <span class="sep">/</span>
+            <span>{{.Stats.Name}}</span>
+        </nav>
+        <h1>{{.Stats.Name}}</h1>
+    </div>
     <div class="header-actions">
         <a href="/characters/detail/{{.Stats.ID}}/edit" class="button is-primary">Editar</a>
-        <form method="POST" action="/characters/detail/{{.Stats.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este personaje?')">
+        <form method="POST" action="/characters/detail/{{.Stats.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar este personaje? Se eliminarán también todos sus registros asociados.">
             <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-            <button type="submit" class="button is-danger">Eliminar</button>
+            <button type="submit" class="button is-danger is-light">Eliminar</button>
         </form>
         <a href="/characters" class="button">Volver a Personajes</a>
     </div>
 </div>
 
-<div class="box">
-    <div class="columns is-multiline">
-        <div class="column is-2">
-            <p class="heading">Jugador</p>
-            <p class="subtitle is-6">{{.Stats.Player}}</p>
-        </div>
-        <div class="column is-2">
+<div class="columns is-multiline">
+    <div class="column is-3">
+        <div class="stat-card">
             <p class="heading">Estado</p>
-            <span class="tag is-{{if eq .Stats.Status "Activo"}}success{{else if eq .Stats.Status "Retirado"}}warning{{else}}danger{{end}}">{{.Stats.Status}}</span>
+            <p style="margin-top:0.35rem"><span class="tag is-medium is-{{if eq .Stats.Status "Activo"}}success{{else if eq .Stats.Status "Retirado"}}warning{{else}}danger{{end}}">{{.Stats.Status}}</span></p>
         </div>
-        <div class="column is-2">
-            <p class="heading">Especie</p>
-            <p class="subtitle is-6">{{.Stats.Species}}</p>
-        </div>
-        <div class="column is-2">
-            <p class="heading">Clase</p>
-            <p class="subtitle is-6">{{.Stats.Class}}</p>
-        </div>
-        <div class="column is-2">
-            <p class="heading">Gremio</p>
-            <p class="subtitle is-6">{{.Stats.GuildName}}</p>
-        </div>
-        <div class="column is-2">
-            <p class="heading">Cargo</p>
-            <p class="subtitle is-6">{{.Stats.GuildRole}}</p>
-        </div>
-        <div class="column is-2">
-            <p class="heading">Montura</p>
-            <p class="subtitle is-6">{{.Stats.Mount}}</p>
-        </div>
-        <div class="column is-2">
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
             <p class="heading">Nivel</p>
-            <p class="title is-4 level-badge">{{.Stats.Level}}</p>
+            <p class="stat-value">{{.Stats.Level}}</p>
         </div>
-        <div class="column is-2">
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
             <p class="heading">XP Total</p>
-            <p class="subtitle is-6">{{printf "%.0f" .Stats.XP}}</p>
+            <p class="stat-value" style="font-size:1.6rem">{{printf "%.0f" .Stats.XP}}</p>
         </div>
-        <div class="column is-2">
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
             <p class="heading">Oro</p>
-            <p class="subtitle is-6 gold-value">{{printf "%.1f" .Stats.GoldBalance}}</p>
+            <p class="stat-value gold-value" style="font-size:1.6rem">{{printf "%.1f" .Stats.GoldBalance}}</p>
         </div>
-        <div class="column is-2">
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Jugador</p>
+            <p style="margin-top:0.35rem">{{.Stats.Player}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Especie</p>
+            <p style="margin-top:0.35rem">{{.Stats.Species}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Clase</p>
+            <p style="margin-top:0.35rem">{{.Stats.Class}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
             <p class="heading">Renombre</p>
-            <p class="subtitle is-6">{{printf "%.0f" .Stats.Renown}}</p>
+            <p style="margin-top:0.35rem">{{printf "%.0f" .Stats.Renown}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Gremio</p>
+            <p style="margin-top:0.35rem">{{if .Stats.GuildName}}<a href="/guilds" class="char-link">{{.Stats.GuildName}}</a>{{else}}—{{end}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Cargo</p>
+            <p style="margin-top:0.35rem">{{if .Stats.GuildRole}}{{.Stats.GuildRole}}{{else}}—{{end}}</p>
+        </div>
+    </div>
+    <div class="column is-3">
+        <div class="stat-card">
+            <p class="heading">Montura</p>
+            <p style="margin-top:0.35rem">{{if .Stats.Mount}}{{.Stats.Mount}}{{else}}—{{end}}</p>
         </div>
     </div>
 </div>
 
 {{if .Registries}}
 <div class="box">
-    <p class="title is-4">Registro de Personaje</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Fecha</th><th>Evento</th><th>XP</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
-        <tbody>
-            {{range .Registries}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td>{{.Event}}</td>
-                <td>{{printf "%.0f" .Experience}}</td>
-                <td>{{printf "%.1f" .Gold}}</td>
-                <td>{{printf "%.0f" .Renown}}</td>
-                <td>{{.Notes}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <p class="title is-5">Registro de Personaje</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead><tr><th>Fecha</th><th>Evento</th><th>XP</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
+            <tbody>
+                {{range .Registries}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td>{{.Event}}</td>
+                    <td>{{printf "%.0f" .Experience}}</td>
+                    <td class="gold-value">{{printf "%.1f" .Gold}}</td>
+                    <td>{{printf "%.0f" .Renown}}</td>
+                    <td>{{.Notes}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{end}}
 
 {{if .MissionEntries}}
 <div class="box">
-    <p class="title is-4">Misiones</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Fecha</th><th>Misión</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
-        <tbody>
-            {{range .MissionEntries}}
-            <tr>
-                <td>{{.Mission.Date.Format "2006-01-02"}}</td>
-                <td>{{.Mission.Name}}</td>
-                <td>{{printf "%.0f" .XPMission}}</td>
-                <td>{{printf "%.0f" .XPReport}}</td>
-                <td>{{printf "%.0f" .XPGuild}}</td>
-                <td>{{printf "%.1f" .Gold}}</td>
-                <td>{{printf "%.0f" .Renown}}</td>
-                <td>{{.Notes}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <p class="title is-5">Misiones</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead><tr><th>Fecha</th><th>Misión</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
+            <tbody>
+                {{range .MissionEntries}}
+                <tr>
+                    <td>{{.Mission.Date.Format "2006-01-02"}}</td>
+                    <td><a href="/missions/detail/{{.Mission.ID}}" class="char-link">{{.Mission.Name}}</a></td>
+                    <td>{{printf "%.0f" .XPMission}}</td>
+                    <td>{{printf "%.0f" .XPReport}}</td>
+                    <td>{{printf "%.0f" .XPGuild}}</td>
+                    <td class="gold-value">{{printf "%.1f" .Gold}}</td>
+                    <td>{{printf "%.0f" .Renown}}</td>
+                    <td>{{.Notes}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{end}}
 
 {{if .DLUsages}}
 <div class="box">
-    <p class="title is-4">Uso de Días Libres</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Fecha</th><th>DL Usados</th><th>Oro</th><th>Descripción</th></tr></thead>
-        <tbody>
-            {{range .DLUsages}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td>{{.DLUsed}}</td>
-                <td>{{printf "%.1f" .GoldChange}}</td>
-                <td>{{.Description}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <p class="title is-5">Uso de Días Libres</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead><tr><th>Fecha</th><th>DL Usados</th><th>Oro</th><th>Descripción</th></tr></thead>
+            <tbody>
+                {{range .DLUsages}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td>{{.DLUsed}}</td>
+                    <td>{{printf "%.1f" .GoldChange}}</td>
+                    <td>{{.Description}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{end}}
 
 {{if .Transactions}}
 <div class="box">
-    <p class="title is-4">Transacciones</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
-        <tbody>
-            {{range .Transactions}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
-                <td>{{.Notes}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <p class="title is-5">Transacciones</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
+            <tbody>
+                {{range .Transactions}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                    <td>{{.Notes}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{end}}
 
 {{if .CostOfLivings}}
 <div class="box">
-    <p class="title is-4">Costo de Vida</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
-        <tbody>
-            {{range .CostOfLivings}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td class="has-text-danger">{{printf "%.1f" .Amount}}</td>
-                <td>{{.Notes}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <p class="title is-5">Costo de Vida</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
+            <tbody>
+                {{range .CostOfLivings}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td class="has-text-danger">{{printf "%.1f" .Amount}}</td>
+                    <td>{{.Notes}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{end}}
 {{end}}

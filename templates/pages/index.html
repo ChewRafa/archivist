@@ -1,35 +1,48 @@
 {{define "content"}}
+<div class="page-header">
+    <div class="page-header-main">
+        <h1>Dashboard</h1>
+    </div>
+    <div class="quick-actions header-actions">
+        <a href="/characters/create" class="button is-primary">Nuevo Personaje</a>
+        <a href="/missions/create" class="button is-primary is-light">Nueva Misión</a>
+        <a href="/guilds/create" class="button is-primary is-light">Nuevo Gremio</a>
+    </div>
+</div>
+
 <div class="columns is-multiline">
     <div class="column is-3">
-        <div class="box has-text-centered">
+        <a href="/characters" class="stat-card">
             <p class="heading">Personajes Activos</p>
-            <p class="title is-2">{{.ActiveCount}}/{{.TotalCount}}</p>
-        </div>
+            <p class="stat-value">{{.ActiveCount}}
+                <span class="stat-foot">/ {{.TotalCount}} total</span>
+            </p>
+        </a>
     </div>
     <div class="column is-3">
-        <div class="box has-text-centered">
+        <a href="/missions" class="stat-card">
             <p class="heading">Misiones Recientes</p>
-            <p class="title is-2">{{len .RecentMissions}}</p>
-        </div>
+            <p class="stat-value">{{len .RecentMissions}}</p>
+        </a>
     </div>
     <div class="column is-3">
-        <div class="box has-text-centered">
+        <a href="/dl" class="stat-card">
             <p class="heading">Uso de DL Reciente</p>
-            <p class="title is-2">{{len .RecentDLUsages}}</p>
-        </div>
+            <p class="stat-value">{{len .RecentDLUsages}}</p>
+        </a>
     </div>
     <div class="column is-3">
-        <div class="box has-text-centered">
+        <a href="/transactions" class="stat-card">
             <p class="heading">Transacciones Recientes</p>
-            <p class="title is-2">{{len .RecentTransactions}}</p>
-        </div>
+            <p class="stat-value">{{len .RecentTransactions}}</p>
+        </a>
     </div>
 </div>
 
 <div class="columns is-multiline">
     <div class="column is-4">
         <div class="box">
-            <p class="title is-4">Distribución por Nivel</p>
+            <p class="title is-5">Distribución por Nivel</p>
             <div class="level-bars">
                 {{range $level, $item := .LevelDist}}
                 <div class="level-bar">
@@ -46,10 +59,10 @@
 
     <div class="column is-4">
         <div class="box">
-            <p class="title is-4">Distribución por Clase</p>
+            <p class="title is-5">Distribución por Clase</p>
             <ul class="dist-list">
-                {{range $class, $count := .ClassDist}}
-                <li><span>{{$class}}</span><span class="count">{{$count.Count}}</span></li>
+                {{range $class, $item := .ClassDist}}
+                <li><span>{{$class}}</span><span class="count">{{$item.Count}}</span></li>
                 {{end}}
             </ul>
         </div>
@@ -57,10 +70,10 @@
 
     <div class="column is-4">
         <div class="box">
-            <p class="title is-4">Distribución por Especie</p>
+            <p class="title is-5">Distribución por Especie</p>
             <ul class="dist-list">
-                {{range $species, $count := .SpeciesDist}}
-                <li><span>{{$species}}</span><span class="count">{{$count.Count}}</span></li>
+                {{range $species, $item := .SpeciesDist}}
+                <li><span>{{$species}}</span><span class="count">{{$item.Count}}</span></li>
                 {{end}}
             </ul>
         </div>
@@ -70,43 +83,63 @@
 <div class="columns">
     <div class="column is-6">
         <div class="box">
-            <p class="title is-4">Misiones Recientes</p>
-            <table class="table is-fullwidth is-striped is-hoverable">
-                <thead>
-                    <tr><th>Fecha</th><th>DM</th><th>Misión</th><th>Personajes</th></tr>
-                </thead>
-                <tbody>
-                    {{range .RecentMissions}}
-                    <tr>
-                        <td>{{.Date.Format "2006-01-02"}}</td>
-                        <td>{{.DM}}</td>
-                        <td>{{.Name}}</td>
-                        <td>{{len .Entries}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+            <p class="title is-5">Misiones Recientes</p>
+            {{if .RecentMissions}}
+            <div class="table-scroll">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr><th>Fecha</th><th>DM</th><th>Misión</th><th>Personajes</th></tr>
+                    </thead>
+                    <tbody>
+                        {{range .RecentMissions}}
+                        <tr>
+                            <td>{{.Date.Format "2006-01-02"}}</td>
+                            <td>{{.DM}}</td>
+                            <td><a href="/missions/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
+                            <td>{{len .Entries}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="empty-state">
+                <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <p class="empty-title">Sin misiones registradas</p>
+                <a href="/missions/create" class="button is-small">Crear la primera</a>
+            </div>
+            {{end}}
         </div>
     </div>
 
     <div class="column is-6">
         <div class="box">
-            <p class="title is-4">Uso de DL Reciente</p>
-            <table class="table is-fullwidth is-striped is-hoverable">
-                <thead>
-                    <tr><th>Fecha</th><th>Personaje</th><th>DL</th><th>Descripción</th></tr>
-                </thead>
-                <tbody>
-                    {{range .RecentDLUsages}}
-                    <tr>
-                        <td>{{.Date.Format "2006-01-02"}}</td>
-                        <td>{{.Character.Name}}</td>
-                        <td>{{.DLUsed}}</td>
-                        <td>{{.Description}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+            <p class="title is-5">Uso de DL Reciente</p>
+            {{if .RecentDLUsages}}
+            <div class="table-scroll">
+                <table class="table is-fullwidth is-striped is-hoverable">
+                    <thead>
+                        <tr><th>Fecha</th><th>Personaje</th><th>DL</th><th>Descripción</th></tr>
+                    </thead>
+                    <tbody>
+                        {{range .RecentDLUsages}}
+                        <tr>
+                            <td>{{.Date.Format "2006-01-02"}}</td>
+                            <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                            <td>{{.DLUsed}}</td>
+                            <td>{{.Description}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="empty-state">
+                <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p class="empty-title">Sin usos de DL</p>
+                <a href="/dl" class="button is-small">Registrar uno</a>
+            </div>
+            {{end}}
         </div>
     </div>
 </div>

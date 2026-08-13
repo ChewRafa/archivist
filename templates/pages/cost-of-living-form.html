@@ -1,6 +1,13 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Title}}</h1>
+    <div class="page-header-main">
+        <nav class="breadcrumbs">
+            <a href="/cost-of-living">Costo de Vida</a>
+            <span class="sep">/</span>
+            <span>{{.Title}}</span>
+        </nav>
+        <h1>{{.Title}}</h1>
+    </div>
     <a href="/cost-of-living" class="button">Volver a Costo de Vida</a>
 </div>
 

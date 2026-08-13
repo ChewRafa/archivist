@@ -1,77 +1,98 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Guild.Name}}</h1>
+    <div class="page-header-main">
+        <nav class="breadcrumbs">
+            <a href="/guilds">Gremios</a>
+            <span class="sep">/</span>
+            <span>{{.Guild.Name}}</span>
+        </nav>
+        <h1>{{.Guild.Name}}</h1>
+    </div>
     <div class="header-actions">
         <a href="/guilds/detail/{{.Guild.ID}}/edit" class="button is-primary">Editar</a>
-        <form method="POST" action="/guilds/detail/{{.Guild.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este gremio?')">
+        <form method="POST" action="/guilds/detail/{{.Guild.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar este gremio?">
             <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-            <button type="submit" class="button is-danger">Eliminar</button>
+            <button type="submit" class="button is-danger is-light">Eliminar</button>
         </form>
         <a href="/guilds" class="button">Volver a Gremios</a>
     </div>
 </div>
 
-<div class="box">
-    <div class="columns is-multiline">
-        <div class="column is-3">
+<div class="columns is-multiline">
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Líder</p>
-            <p class="subtitle is-6">{{if .Guild.Leader}}{{.Guild.Leader.Name}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{if .Guild.Leader}}{{.Guild.Leader.Name}}{{else}}—{{end}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Tipo de Sede</p>
-            <p class="subtitle is-6">{{if .Guild.HallType}}{{.Guild.HallType}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{if .Guild.HallType}}{{.Guild.HallType}}{{else}}—{{end}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Costo de Vida</p>
-            <p class="subtitle is-6">{{printf "%.2f" .Guild.CostOfLiving}}</p>
+            <p style="margin-top:0.35rem">{{printf "%.2f" .Guild.CostOfLiving}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Arcas</p>
-            <p class="subtitle is-6 gold-value">{{printf "%.1f" .Guild.Treasury}}</p>
+            <p class="stat-value gold-value" style="font-size:1.6rem">{{printf "%.1f" .Guild.Treasury}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Registro</p>
-            <p class="subtitle is-6">{{if .Guild.RegisteredAt}}{{.Guild.RegisteredAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{if .Guild.RegisteredAt}}{{.Guild.RegisteredAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Aprobación</p>
-            <p class="subtitle is-6">{{if .Guild.ApprovedAt}}{{.Guild.ApprovedAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{if .Guild.ApprovedAt}}{{.Guild.ApprovedAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
         </div>
     </div>
 </div>
 
 {{if .Guild.Notes}}
 <div class="box">
-    <p class="title is-4">Notas</p>
+    <p class="title is-5">Notas</p>
     <p>{{.Guild.Notes}}</p>
 </div>
 {{end}}
 
 <div class="box">
-    <p class="title is-4">Miembros ({{len .Guild.Members}})</p>
+    <p class="title is-5">Miembros ({{len .Guild.Members}})</p>
     {{if .Guild.Members}}
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Nombre</th><th>Clase</th><th>Especie</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            {{range .Guild.Members}}
-            <tr>
-                <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
-                <td>{{.Class}}</td>
-                <td>{{.Species}}</td>
-                <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr><th>Nombre</th><th>Clase</th><th>Especie</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                {{range .Guild.Members}}
+                <tr>
+                    <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
+                    <td>{{.Class}}</td>
+                    <td>{{.Species}}</td>
+                    <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
     {{else}}
-    <p>Este gremio no tiene miembros.</p>
+    <div class="empty-state">
+        <p class="empty-title">Este gremio no tiene miembros.</p>
+    </div>
     {{end}}
 </div>
 
 <div class="box">
-    <p class="title is-4">Economía de Gremio</p>
+    <p class="title is-5">Economía de Gremio</p>
     <form method="POST" action="/guilds/detail/{{.Guild.ID}}/transactions" class="character-form" style="margin-bottom:1rem">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-row">
@@ -101,29 +122,33 @@
         </div>
     </form>
     {{if .Transactions}}
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-            {{range .Transactions}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
-                <td>{{.Notes}}</td>
-                <td>
-                    <a href="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/edit" class="button is-small is-info">Editar</a>
-                    <form method="POST" action="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro?')">
-                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                        <button type="submit" class="button is-small is-danger">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+                {{range .Transactions}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                    <td>{{.Notes}}</td>
+                    <td class="table-actions">
+                        <a href="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/edit" class="button is-small is-info is-light">Editar</a>
+                        <form method="POST" action="/guilds/detail/{{$.Guild.ID}}/transactions/{{.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar este movimiento?">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <button type="submit" class="button is-small is-danger is-light">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
     {{else}}
-    <p>No hay movimientos registrados.</p>
+    <div class="empty-state">
+        <p class="empty-title">No hay movimientos registrados.</p>
+    </div>
     {{end}}
 </div>
 {{end}}

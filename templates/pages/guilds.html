@@ -1,10 +1,22 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>Gremios</h1>
+    <div class="page-header-main">
+        <h1>Gremios</h1>
+    </div>
     <div class="header-actions">
         <a href="/guilds/create" class="button is-primary">Nuevo Gremio</a>
     </div>
 </div>
+
+{{if not .Guilds}}
+<div class="box">
+    <div class="empty-state">
+        <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+        <p class="empty-title">No hay gremios registrados</p>
+        <a href="/guilds/create" class="button is-small is-primary">Nuevo Gremio</a>
+    </div>
+</div>
+{{end}}
 
 <div class="guilds-grid">
     {{range .Guilds}}
@@ -20,17 +32,34 @@
 
         <div class="card-content">
             <div class="content">
-                {{if .RegisteredAt}}
-                <p><strong>Registro:</strong> {{.RegisteredAt.Format "2006-01-02"}}</p>
-                {{end}}
-                {{if .ApprovedAt}}
-                <p><strong>Aprobación:</strong> {{.ApprovedAt.Format "2006-01-02"}}</p>
-                {{end}}
-                {{if .HallType}}
-                <p><strong>Tipo de Sede:</strong> {{.HallType}}</p>
-                {{end}}
-                <p><strong>Costo de Vida:</strong> {{printf "%.2f" .CostOfLiving}}</p>
-                <p><strong>Arcas:</strong> <span class="gold-value">{{printf "%.1f" .Treasury}}</span></p>
+                <div class="columns is-multiline is-mobile is-variable is-2" style="margin-bottom:0.5rem">
+                    {{if .RegisteredAt}}
+                    <div class="column is-half">
+                        <p class="heading">Registro</p>
+                        <p class="is-size-6">{{.RegisteredAt.Format "2006-01-02"}}</p>
+                    </div>
+                    {{end}}
+                    {{if .ApprovedAt}}
+                    <div class="column is-half">
+                        <p class="heading">Aprobación</p>
+                        <p class="is-size-6">{{.ApprovedAt.Format "2006-01-02"}}</p>
+                    </div>
+                    {{end}}
+                    {{if .HallType}}
+                    <div class="column is-half">
+                        <p class="heading">Tipo de Sede</p>
+                        <p class="is-size-6">{{.HallType}}</p>
+                    </div>
+                    {{end}}
+                    <div class="column is-half">
+                        <p class="heading">Costo de Vida</p>
+                        <p class="is-size-6">{{printf "%.2f" .CostOfLiving}}</p>
+                    </div>
+                    <div class="column is-half">
+                        <p class="heading">Arcas</p>
+                        <p class="is-size-6 gold-value">{{printf "%.1f" .Treasury}}</p>
+                    </div>
+                </div>
                 {{if .Notes}}
                 <p><strong>Notas:</strong> {{.Notes}}</p>
                 {{end}}
@@ -39,20 +68,20 @@
             <footer class="card-footer">
                 <a href="/guilds/detail/{{.ID}}" class="card-footer-item">Ver</a>
                 <a href="/guilds/detail/{{.ID}}/edit" class="card-footer-item">Editar</a>
-                <form method="POST" action="/guilds/detail/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar este gremio?')">
+                <form method="POST" action="/guilds/detail/{{.ID}}/delete" class="card-footer-item" data-confirm="¿Estás seguro de eliminar este gremio?">
                     <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                    <button type="submit" class="card-footer-item" style="color:#f14668;cursor:pointer;background:none;border:none;font-family:inherit;font-size:inherit">Eliminar</button>
+                    <button type="submit" class="has-text-danger" style="cursor:pointer;background:none;border:none;font-family:inherit;font-size:inherit;width:100%">Eliminar</button>
                 </form>
             </footer>
 
             {{if .Members}}
             <hr>
             <p class="heading">Miembros ({{len .Members}})</p>
-            <ul>
+            <div class="member-chips" style="margin-top:0.5rem">
                 {{range .Members}}
-                <li><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a> <span class="member-class">({{.Class}} {{.Species}})</span></li>
+                <a href="/characters/detail/{{.ID}}" class="tag is-info is-light char-link">{{.Name}}</a>
                 {{end}}
-            </ul>
+            </div>
             {{end}}
         </div>
     </div>

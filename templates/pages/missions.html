@@ -1,49 +1,65 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>Misiones</h1>
-    <a href="/missions/create" class="button is-primary">Nueva Misión</a>
+    <div class="page-header-main">
+        <h1>Misiones</h1>
+    </div>
+    <div class="header-actions">
+        <a href="/missions/create" class="button is-primary">Nueva Misión</a>
+    </div>
 </div>
 
-{{range .Missions}}
+{{if not .Missions}}
 <div class="box">
-    <div class="level">
-        <div class="level-left">
-            <div class="level-item">
-                <p class="title is-4"><a href="/missions/detail/{{.ID}}">{{.Name}}</a></p>
-            </div>
-        </div>
-        <div class="level-right">
-            <div class="level-item">
-                <span class="tag">{{.Date.Format "2006-01-02"}}</span>
-            </div>
-            <div class="level-item">
-                <span class="tag is-info">DM: {{.DM}}</span>
-            </div>
-            <div class="level-item">
-                <span class="tag is-light">{{len .Entries}} personajes</span>
-            </div>
-        </div>
+    <div class="empty-state">
+        <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <p class="empty-title">No hay misiones registradas</p>
+        <a href="/missions/create" class="button is-small is-primary">Nueva Misión</a>
     </div>
+</div>
+{{end}}
 
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Personaje</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>XP Total</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr>
-        </thead>
-        <tbody>
-            {{range .Entries}}
-            <tr>
-                <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
-                <td>{{printf "%.0f" .XPMission}}</td>
-                <td>{{printf "%.0f" .XPReport}}</td>
-                <td>{{printf "%.0f" .XPGuild}}</td>
-                <td class="xp-total">{{printf "%.0f" (add3 .XPMission .XPReport .XPGuild)}}</td>
-                <td>{{printf "%.1f" .Gold}}</td>
-                <td>{{printf "%.0f" .Renown}}</td>
-                <td>{{.Notes}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+{{range .Missions}}
+<div class="card mission-card">
+    <header class="card-header">
+        <p class="card-header-title"><a href="/missions/detail/{{.ID}}" class="char-link">{{.Name}}</a></p>
+        <div class="card-header-icon">
+            <span class="tags has-addons">
+                <span class="tag">{{.Date.Format "2006-01-02"}}</span>
+                <span class="tag is-info">DM: {{.DM}}</span>
+                <span class="tag is-light">{{len .Entries}} personajes</span>
+            </span>
+        </div>
+    </header>
+    <div class="card-content">
+        {{if .Entries}}
+        <div class="table-scroll">
+            <table class="table is-fullwidth is-striped is-hoverable">
+                <thead>
+                    <tr><th>Personaje</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>XP Total</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr>
+                </thead>
+                <tbody>
+                    {{range .Entries}}
+                    <tr>
+                        <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                        <td>{{printf "%.0f" .XPMission}}</td>
+                        <td>{{printf "%.0f" .XPReport}}</td>
+                        <td>{{printf "%.0f" .XPGuild}}</td>
+                        <td class="xp-total">{{printf "%.0f" (add3 .XPMission .XPReport .XPGuild)}}</td>
+                        <td>{{printf "%.1f" .Gold}}</td>
+                        <td>{{printf "%.0f" .Renown}}</td>
+                        <td>{{.Notes}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="empty-state">
+            <p class="empty-title">Sin personajes en esta misión aún</p>
+            <a href="/missions/detail/{{.ID}}" class="button is-small">Agregar personajes</a>
+        </div>
+        {{end}}
+    </div>
 </div>
 {{end}}
 {{end}}

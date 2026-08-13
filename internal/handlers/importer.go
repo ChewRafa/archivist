@@ -85,5 +85,6 @@ func ImportPostHandler(c *gin.Context) {
 		"ActiveMenu": "import",
 		"Result":     &result,
 		"Summary":    summary,
+		"Sheets":     services.AllSheetInfo(),
 	})
 }

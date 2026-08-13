@@ -1,69 +1,86 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Mission.Name}}</h1>
+    <div class="page-header-main">
+        <nav class="breadcrumbs">
+            <a href="/missions">Misiones</a>
+            <span class="sep">/</span>
+            <span>{{.Mission.Name}}</span>
+        </nav>
+        <h1>{{.Mission.Name}}</h1>
+    </div>
     <div class="header-actions">
         <a href="/missions/detail/{{.Mission.ID}}/edit" class="button is-primary">Editar</a>
-        <form method="POST" action="/missions/detail/{{.Mission.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar esta misión? También se eliminarán todas sus entradas.')">
+        <form method="POST" action="/missions/detail/{{.Mission.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar esta misión? También se eliminarán todas sus entradas.">
             <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-            <button type="submit" class="button is-danger">Eliminar</button>
+            <button type="submit" class="button is-danger is-light">Eliminar</button>
         </form>
         <a href="/missions" class="button">Volver a Misiones</a>
     </div>
 </div>
 
-<div class="box">
-    <div class="columns is-multiline">
-        <div class="column is-3">
+<div class="columns is-multiline">
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Fecha</p>
-            <p class="subtitle is-6">{{.Mission.Date.Format "2006-01-02"}}</p>
+            <p style="margin-top:0.35rem">{{.Mission.Date.Format "2006-01-02"}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">DM</p>
-            <p class="subtitle is-6">{{.Mission.DM}}</p>
+            <p style="margin-top:0.35rem">{{.Mission.DM}}</p>
         </div>
-        <div class="column is-3">
+    </div>
+    <div class="column is-4">
+        <div class="stat-card">
             <p class="heading">Personajes</p>
-            <p class="subtitle is-6">{{len .Mission.Entries}}</p>
+            <p class="stat-value">{{len .Mission.Entries}}</p>
         </div>
     </div>
 </div>
 
 {{if .Mission.Entries}}
 <div class="box">
-    <p class="title is-4">Entradas</p>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Personaje</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>XP Total</th><th>Oro</th><th>Renombre</th><th>Notas</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-            {{range .Mission.Entries}}
-            <tr>
-                <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
-                <td>{{printf "%.0f" .XPMission}}</td>
-                <td>{{printf "%.0f" .XPReport}}</td>
-                <td>{{printf "%.0f" .XPGuild}}</td>
-                <td class="xp-total">{{printf "%.0f" (add3 .XPMission .XPReport .XPGuild)}}</td>
-                <td>{{printf "%.1f" .Gold}}</td>
-                <td>{{printf "%.0f" .Renown}}</td>
-                <td>{{.Notes}}</td>
-                <td>
-                    <div class="buttons are-small">
-                        <a href="/missions/detail/{{.MissionID}}/entries/{{.ID}}/edit" class="button is-small">Editar</a>
-                        <form method="POST" action="/missions/detail/{{.MissionID}}/entries/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro de eliminar esta entrada?')">
+    <p class="title is-5">Entradas</p>
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr><th>Personaje</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>XP Total</th><th>Oro</th><th>Renombre</th><th>Notas</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+                {{range .Mission.Entries}}
+                <tr>
+                    <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                    <td>{{printf "%.0f" .XPMission}}</td>
+                    <td>{{printf "%.0f" .XPReport}}</td>
+                    <td>{{printf "%.0f" .XPGuild}}</td>
+                    <td class="xp-total">{{printf "%.0f" (add3 .XPMission .XPReport .XPGuild)}}</td>
+                    <td class="gold-value">{{printf "%.1f" .Gold}}</td>
+                    <td>{{printf "%.0f" .Renown}}</td>
+                    <td>{{.Notes}}</td>
+                    <td class="table-actions">
+                        <a href="/missions/detail/{{.MissionID}}/entries/{{.ID}}/edit" class="button is-small is-info is-light">Editar</a>
+                        <form method="POST" action="/missions/detail/{{.MissionID}}/entries/{{.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar esta entrada?">
                             <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                            <button type="submit" class="button is-small is-danger">Eliminar</button>
+                            <button type="submit" class="button is-small is-danger is-light">Eliminar</button>
                         </form>
-                    </div>
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{else}}
+<div class="box">
+    <div class="empty-state">
+        <p class="empty-title">Esta misión aún no tiene personajes</p>
+    </div>
 </div>
 {{end}}
 
 <div class="box">
-    <p class="title is-4">Agregar Personaje</p>
+    <p class="title is-5">Agregar Personaje</p>
     {{if .Error}}
     <div class="notification is-danger">{{.Error}}</div>
     {{end}}

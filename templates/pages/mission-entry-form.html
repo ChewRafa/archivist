@@ -1,6 +1,15 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>Editar Entrada - {{.Mission.Name}}</h1>
+    <div class="page-header-main">
+        <nav class="breadcrumbs">
+            <a href="/missions">Misiones</a>
+            <span class="sep">/</span>
+            <a href="/missions/detail/{{.Mission.ID}}">{{.Mission.Name}}</a>
+            <span class="sep">/</span>
+            <span>{{.Title}}</span>
+        </nav>
+        <h1>{{.Title}}</h1>
+    </div>
     <a href="/missions/detail/{{.Mission.ID}}" class="button">Volver a la Misión</a>
 </div>
 

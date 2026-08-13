@@ -44,6 +44,32 @@ func generateCSRFToken() string {
 	return hex.EncodeToString(b)
 }
 
+type Flash struct {
+	Kind    string
+	Message string
+}
+
+func setFlash(c *gin.Context, kind, message string) {
+	session := sessions.Default(c)
+	session.Set("flash", &Flash{Kind: kind, Message: message})
+	session.Save()
+}
+
+func getFlash(c *gin.Context) *Flash {
+	session := sessions.Default(c)
+	raw := session.Get("flash")
+	if raw == nil {
+		return nil
+	}
+	session.Delete("flash")
+	session.Save()
+	flash, ok := raw.(*Flash)
+	if !ok {
+		return nil
+	}
+	return flash
+}
+
 func render(c *gin.Context, status int, page string, data gin.H) {
 	tmpl, ok := templates[page]
 	if !ok {
@@ -73,6 +99,12 @@ func render(c *gin.Context, status int, page string, data gin.H) {
 			session.Save()
 		}
 		data["CSRFToken"] = token
+	}
+
+	if data["Flash"] == nil {
+		if flash := getFlash(c); flash != nil {
+			data["Flash"] = flash
+		}
 	}
 
 	c.Status(status)

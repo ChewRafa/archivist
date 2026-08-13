@@ -88,6 +88,7 @@ func IndexHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "index.html", gin.H{
 		"Title":              "Dashboard",
+		"ActiveMenu":         "dashboard",
 		"Stats":              stats,
 		"ActiveCount":        activeCount,
 		"TotalCount":         len(stats),
@@ -119,9 +120,10 @@ func CharactersHandler(c *gin.Context) {
 	})
 
 	render(c, http.StatusOK, "characters.html", gin.H{
-		"Title":  "Personajes",
-		"Stats":  stats,
-		"Filter": filter,
+		"Title":      "Personajes",
+		"ActiveMenu": "characters",
+		"Stats":      stats,
+		"Filter":     filter,
 	})
 }
 
@@ -150,6 +152,7 @@ func CharacterDetailHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "character-detail.html", gin.H{
 		"Title":          stats.Name,
+		"ActiveMenu":     "characters",
 		"Stats":          stats,
 		"Registries":     registries,
 		"MissionEntries": missionEntries,
@@ -164,8 +167,9 @@ func MissionsHandler(c *gin.Context) {
 	db.DB.Order("date DESC").Preload("Entries").Preload("Entries.Character").Find(&missions)
 
 	render(c, http.StatusOK, "missions.html", gin.H{
-		"Title":    "Misiones",
-		"Missions": missions,
+		"Title":      "Misiones",
+		"ActiveMenu": "missions",
+		"Missions":   missions,
 	})
 }
 
@@ -178,6 +182,7 @@ func DLHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "dl.html", gin.H{
 		"Title":      "Uso de DL",
+		"ActiveMenu": "dl",
 		"Usages":     usages,
 		"Characters": characters,
 	})
@@ -227,6 +232,7 @@ func DLUsageCreateHandler(c *gin.Context) {
 	}
 
 	db.DB.Create(&usage)
+	setFlash(c, "success", "Uso de DL registrado correctamente.")
 	c.Redirect(http.StatusFound, "/dl")
 }
 
@@ -326,12 +332,14 @@ func DLUsageUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Uso de DL actualizado correctamente.")
 	c.Redirect(http.StatusFound, "/dl")
 }
 
 func DLUsageDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Delete(&models.DLUsage{}, id)
+	setFlash(c, "success", "Uso de DL eliminado.")
 	c.Redirect(http.StatusFound, "/dl")
 }
 
@@ -344,6 +352,7 @@ func TransactionsHandler(c *gin.Context) {
 
 	render(c, http.StatusOK, "transactions.html", gin.H{
 		"Title":        "Transacciones",
+		"ActiveMenu":   "transactions",
 		"Transactions": transactions,
 		"Characters":   characters,
 	})
@@ -374,6 +383,7 @@ func TransactionCreateHandler(c *gin.Context) {
 	}
 
 	db.DB.Create(&tx)
+	setFlash(c, "success", "Transacción añadida correctamente.")
 	c.Redirect(http.StatusFound, "/transactions")
 }
 
@@ -470,12 +480,14 @@ func TransactionUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Transacción actualizada correctamente.")
 	c.Redirect(http.StatusFound, "/transactions")
 }
 
 func TransactionDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Delete(&models.Transaction{}, id)
+	setFlash(c, "success", "Transacción eliminada.")
 	c.Redirect(http.StatusFound, "/transactions")
 }
 
@@ -484,8 +496,9 @@ func GuildsHandler(c *gin.Context) {
 	db.DB.Preload("Leader").Preload("Members").Find(&guilds)
 
 	render(c, http.StatusOK, "guilds.html", gin.H{
-		"Title":  "Gremios",
-		"Guilds": guilds,
+		"Title":      "Gremios",
+		"ActiveMenu": "guilds",
+		"Guilds":     guilds,
 	})
 }
 
@@ -586,6 +599,7 @@ func GuildCreateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Gremio creado correctamente.")
 	c.Redirect(http.StatusFound, "/guilds/detail/"+fmt.Sprint(guild.ID))
 }
 
@@ -728,6 +742,7 @@ func GuildUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Gremio actualizado correctamente.")
 	c.Redirect(http.StatusFound, "/guilds/detail/"+id)
 }
 
@@ -735,6 +750,7 @@ func GuildDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Where("guild_id = ?", id).Delete(&models.GuildTransaction{})
 	db.DB.Delete(&models.Guild{}, id)
+	setFlash(c, "success", "Gremio eliminado.")
 	c.Redirect(http.StatusFound, "/guilds")
 }
 
@@ -768,6 +784,7 @@ func GuildTransactionCreateHandler(c *gin.Context) {
 		return err
 	})
 
+	setFlash(c, "success", "Movimiento de arcas añadido.")
 	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
 }
 
@@ -861,6 +878,7 @@ func GuildTransactionUpdateHandler(c *gin.Context) {
 		return services.SyncGuildTreasury(tx, entry.GuildID)
 	})
 
+	setFlash(c, "success", "Movimiento de arcas actualizado.")
 	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
 }
 
@@ -881,6 +899,7 @@ func GuildTransactionDeleteHandler(c *gin.Context) {
 		return services.SyncGuildTreasury(tx, entry.GuildID)
 	})
 
+	setFlash(c, "success", "Movimiento de arcas eliminado.")
 	c.Redirect(http.StatusFound, "/guilds/detail/"+guildID)
 }
 
@@ -961,6 +980,7 @@ func MissionCreateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Misión creada correctamente.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+fmt.Sprint(mission.ID))
 }
 
@@ -1064,6 +1084,7 @@ func MissionUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Misión actualizada correctamente.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
 
@@ -1077,6 +1098,7 @@ func MissionDeleteHandler(c *gin.Context) {
 	}
 
 	db.DB.Delete(&models.Mission{}, id)
+	setFlash(c, "success", "Misión eliminada.")
 	c.Redirect(http.StatusFound, "/missions")
 }
 
@@ -1101,6 +1123,7 @@ func MissionEntryCreateHandler(c *gin.Context) {
 	}
 
 	db.DB.Create(&entry)
+	setFlash(c, "success", "Personaje añadido a la misión.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
 
@@ -1152,6 +1175,7 @@ func MissionEntryUpdateHandler(c *gin.Context) {
 	entry.Notes = c.PostForm("notes")
 
 	db.DB.Save(&entry)
+	setFlash(c, "success", "Entrada actualizada correctamente.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
 
@@ -1159,6 +1183,7 @@ func MissionEntryDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	eid := c.Param("eid")
 	db.DB.Delete(&models.MissionEntry{}, eid)
+	setFlash(c, "success", "Entrada eliminada.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
 
@@ -1254,6 +1279,7 @@ func CharacterCreateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Personaje creado correctamente.")
 	c.Redirect(http.StatusFound, "/characters/detail/"+fmt.Sprint(character.ID))
 }
 
@@ -1353,12 +1379,14 @@ func CharacterUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Personaje actualizado correctamente.")
 	c.Redirect(http.StatusFound, "/characters/detail/"+id)
 }
 
 func CharacterDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Delete(&models.Character{}, id)
+	setFlash(c, "success", "Personaje eliminado.")
 	c.Redirect(http.StatusFound, "/characters")
 }
 
@@ -1404,6 +1432,7 @@ func CostOfLivingCreateHandler(c *gin.Context) {
 	}
 
 	db.DB.Create(&entry)
+	setFlash(c, "success", "Costo de vida registrado.")
 	c.Redirect(http.StatusFound, "/cost-of-living")
 }
 
@@ -1500,12 +1529,14 @@ func CostOfLivingUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	setFlash(c, "success", "Costo de vida actualizado.")
 	c.Redirect(http.StatusFound, "/cost-of-living")
 }
 
 func CostOfLivingDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Delete(&models.CostOfLiving{}, id)
+	setFlash(c, "success", "Registro de costo de vida eliminado.")
 	c.Redirect(http.StatusFound, "/cost-of-living")
 }
 

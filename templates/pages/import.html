@@ -1,63 +1,82 @@
 {{define "content"}}
-<section class="section">
-    <h1 class="title">Importar Datos</h1>
-    <p class="subtitle">Sube un archivo Excel (.xlsx) para llenar la base de datos</p>
-
-    {{if .Error}}
-    <div class="notification is-danger">
-        <strong>Error:</strong> {{.Error}}
+<div class="page-header">
+    <div class="page-header-main">
+        <h1>Importar Datos</h1>
+        <p class="subtitle is-6">Sube un archivo Excel (.xlsx) para llenar la base de datos</p>
     </div>
-    {{end}}
+</div>
 
-    {{if .Result}}
-    <div class="notification {{if .Result.Errors}}is-warning{{else}}is-success{{end}}">
-        <strong>Resultado de la importación:</strong>
-        <ul class="mt-2">
-            <li>Personajes: {{.Result.Characters}} creados, {{.Result.CharactersSkipped}} omitidos</li>
-            <li>Usos de DL: {{.Result.DLUsages}} creados, {{.Result.DLUsagesSkipped}} omitidos</li>
-            <li>Transacciones: {{.Result.Transactions}} creadas, {{.Result.TransactionsSkipped}} omitidas</li>
-            <li>Costos de Vida: {{.Result.CostOfLivings}} creados, {{.Result.CostOfLivingsSkipped}} omitidos</li>
-            <li>Registros de Personajes: {{.Result.Registries}} creados, {{.Result.RegistriesSkipped}} omitidos</li>
-            <li>Misiones: {{.Result.Missions}} creadas, {{.Result.MissionsSkipped}} omitidas</li>
-            <li>Entradas de Misión: {{.Result.MissionEntries}} creadas, {{.Result.MissionEntriesSkipped}} omitidas</li>
-            <li>Gremios: {{.Result.Guilds}} creados, {{.Result.GuildsSkipped}} omitidos</li>
-            <li>Economía de Gremios: {{.Result.GuildTransactions}} creadas, {{.Result.GuildTransactionsSkipped}} omitidas</li>
-        </ul>
-        {{if .Result.Errors}}
-        <hr>
-        <strong>Errores:</strong>
-        <ul>
-            {{range .Result.Errors}}
-            <li>{{.}}</li>
-            {{end}}
-        </ul>
+{{if .Error}}
+<div class="notification is-danger">
+    <strong>Error:</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="notification {{if .Result.Errors}}is-warning{{else}}is-success{{end}}">
+    <strong>Resultado de la importación:</strong>
+    <ul class="mt-2">
+        <li>Personajes: {{.Result.Characters}} creados, {{.Result.CharactersSkipped}} omitidos</li>
+        <li>Usos de DL: {{.Result.DLUsages}} creados, {{.Result.DLUsagesSkipped}} omitidos</li>
+        <li>Transacciones: {{.Result.Transactions}} creadas, {{.Result.TransactionsSkipped}} omitidas</li>
+        <li>Costos de Vida: {{.Result.CostOfLivings}} creados, {{.Result.CostOfLivingsSkipped}} omitidos</li>
+        <li>Registros de Personajes: {{.Result.Registries}} creados, {{.Result.RegistriesSkipped}} omitidos</li>
+        <li>Misiones: {{.Result.Missions}} creadas, {{.Result.MissionsSkipped}} omitidas</li>
+        <li>Entradas de Misión: {{.Result.MissionEntries}} creadas, {{.Result.MissionEntriesSkipped}} omitidas</li>
+        <li>Gremios: {{.Result.Guilds}} creados, {{.Result.GuildsSkipped}} omitidos</li>
+        <li>Economía de Gremios: {{.Result.GuildTransactions}} creadas, {{.Result.GuildTransactionsSkipped}} omitidas</li>
+    </ul>
+    {{if .Result.Errors}}
+    <hr>
+    <strong>Errores:</strong>
+    <ul>
+        {{range .Result.Errors}}
+        <li>{{.}}</li>
         {{end}}
-        <hr>
-        <p class="is-size-7">{{.Summary}}</p>
-    </div>
+    </ul>
     {{end}}
+    <hr>
+    <p class="is-size-7">{{.Summary}}</p>
+</div>
+{{end}}
 
-    <form method="POST" enctype="multipart/form-data" class="box">
+<div class="box">
+    <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
         <div class="field">
             <label class="label">Hojas a importar</label>
             <div class="control">
-                {{range .Sheets}}
-                <label class="checkbox mr-4">
-                    <input type="checkbox" name="sheets" value="{{.Key}}" checked>
-                    {{.Name}}
+                <label class="checkbox">
+                    <input type="checkbox" data-check-all="#import-sheets-checkboxes" checked>
+                    <strong>Seleccionar todas</strong>
                 </label>
-                <br>
-                {{end}}
+                <div id="import-sheets-checkboxes" class="columns is-multiline mt-2">
+                    {{range .Sheets}}
+                    <div class="column is-half">
+                        <label class="checkbox">
+                            <input type="checkbox" name="sheets" value="{{.Key}}" checked>
+                            {{.Name}}
+                        </label>
+                    </div>
+                    {{end}}
+                </div>
             </div>
             <p class="help">Selecciona qué hojas del archivo Excel quieres importar. Desmarca las que quieras omitir.</p>
         </div>
 
         <div class="field">
             <label class="label">Archivo Excel</label>
-            <div class="control">
-                <input class="input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+            <div class="file is-boxed is-fullwidth">
+                <label class="file-label">
+                    <input class="file-input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    <span class="file-cta">
+                        <span class="file-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </span>
+                        <span class="file-label">Elegir archivo .xlsx...</span>
+                    </span>
+                </label>
             </div>
         </div>
 
@@ -67,5 +86,5 @@
             </div>
         </div>
     </form>
-</section>
+</div>
 {{end}}

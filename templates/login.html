@@ -1,38 +1,79 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Archivist - {{.Title}}</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="/static/bulma.min.css">
     <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/app.js" defer></script>
     <style>
         .login-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: #f5f5f5;
+            padding: 1.5rem;
+            background: linear-gradient(160deg, var(--bulma-scheme-main-bis), var(--bulma-scheme-main));
         }
         .login-card {
             width: 100%;
             max-width: 400px;
             padding: 2rem;
+            border-radius: var(--bulma-radius-large);
+            box-shadow: var(--bulma-shadow);
+            border: 1px solid var(--bulma-border);
         }
-        .login-card .title {
-            text-align: center;
-            margin-bottom: 2rem;
+        .login-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+        }
+        .login-brand .logo {
+            width: 2.75rem;
+            height: 2.75rem;
+            color: var(--bulma-primary);
+        }
+        .login-brand .title {
+            margin: 0;
+            font-weight: 800;
+        }
+        .login-brand .subtitle {
+            margin: 0;
+        }
+        .login-theme {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
+    <button type="button" class="button is-light login-theme theme-toggle-btn">
+        <span class="icon icon-sun">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>
+        </span>
+        <span class="icon icon-moon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+    </button>
+
     <div class="login-wrapper">
         <div class="box login-card">
-            <p class="title is-4">Archivist</p>
-            <p class="subtitle is-6 has-text-centered">Gestión de Aventureros</p>
+            <div class="login-brand">
+                <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <p class="title is-4">Archivist</p>
+                <p class="subtitle is-6 has-text-centered">Gestión de Aventureros</p>
+            </div>
+
             {{if .Error}}
             <div class="notification is-danger">{{.Error}}</div>
             {{end}}
+
             <form method="POST" action="/login">
                 <div class="field">
                     <label class="label" for="username">Usuario</label>

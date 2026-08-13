@@ -1,51 +1,69 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>Personajes</h1>
-    <div class="header-actions">
-        <a href="/characters/create" class="button is-primary">Nuevo Personaje</a>
+    <div class="page-header-main">
+        <h1>Personajes</h1>
         <div class="buttons has-addons">
-            <a href="/characters" class="button {{if eq .Filter ""}}is-active{{end}}">Todos</a>
-            <a href="/characters?filter=Activo" class="button {{if eq .Filter "Activo"}}is-active{{end}}">Activos</a>
-            <a href="/characters?filter=Retirado" class="button {{if eq .Filter "Retirado"}}is-active{{end}}">Retirados</a>
-            <a href="/characters?filter=Muerto" class="button {{if eq .Filter "Muerto"}}is-active{{end}}">Muertos</a>
+            <a href="/characters" class="button is-small {{if eq .Filter ""}}is-active is-link{{end}}">Todos</a>
+            <a href="/characters?filter=Activo" class="button is-small {{if eq .Filter "Activo"}}is-active is-link{{end}}">Activos</a>
+            <a href="/characters?filter=Retirado" class="button is-small {{if eq .Filter "Retirado"}}is-active is-link{{end}}">Retirados</a>
+            <a href="/characters?filter=Muerto" class="button is-small {{if eq .Filter "Muerto"}}is-active is-link{{end}}">Muertos</a>
         </div>
+    </div>
+    <div class="header-actions">
+        <div class="search-box">
+            <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input class="input" type="search" data-table-search="#character-table" placeholder="Buscar personaje...">
+        </div>
+        <a href="/characters/create" class="button is-primary">Nuevo Personaje</a>
     </div>
 </div>
 
 <div class="box">
-    <table class="table is-fullwidth is-striped is-hoverable character-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Personaje</th>
-                <th>Jugador</th>
-                <th>Estado</th>
-                <th>Especie</th>
-                <th>Clase</th>
-                <th>Gremio</th>
-                <th>Nivel</th>
-                <th>XP</th>
-                <th>Oro</th>
-                <th>Renombre</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Stats}}
-            <tr class="status-{{.Status}}">
-                <td>{{.Number}}</td>
-                <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
-                <td>{{.Player}}</td>
-                <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
-                <td>{{.Species}}</td>
-                <td>{{.Class}}</td>
-                <td>{{.GuildName}}</td>
-                <td class="level-cell">{{.Level}}</td>
-                <td>{{printf "%.0f" .XP}}</td>
-                <td class="gold-value">{{printf "%.1f" .GoldBalance}}</td>
-                <td>{{printf "%.0f" .Renown}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+    {{if .Stats}}
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable character-table" id="character-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Personaje</th>
+                    <th>Jugador</th>
+                    <th>Estado</th>
+                    <th>Especie</th>
+                    <th>Clase</th>
+                    <th>Gremio</th>
+                    <th>Nivel</th>
+                    <th>XP</th>
+                    <th>Oro</th>
+                    <th>Renombre</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Stats}}
+                <tr class="status-{{.Status}}">
+                    <td>{{.Number}}</td>
+                    <td><a href="/characters/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
+                    <td>{{.Player}}</td>
+                    <td><span class="tag is-{{if eq .Status "Activo"}}success{{else if eq .Status "Retirado"}}warning{{else}}danger{{end}}">{{.Status}}</span></td>
+                    <td>{{.Species}}</td>
+                    <td>{{.Class}}</td>
+                    <td>{{.GuildName}}</td>
+                    <td><span class="level-badge">{{.Level}}</span></td>
+                    <td>{{printf "%.0f" .XP}}</td>
+                    <td class="gold-value">{{printf "%.1f" .GoldBalance}}</td>
+                    <td>{{printf "%.0f" .Renown}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p class="empty-title">No hay personajes que coincidan</p>
+        <a href="/characters/create" class="button is-small is-primary">Nuevo Personaje</a>
+    </div>
+    {{end}}
 </div>
 {{end}}

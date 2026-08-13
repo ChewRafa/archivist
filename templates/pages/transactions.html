@@ -1,10 +1,20 @@
 {{define "content"}}
 <div class="page-header">
-    <h1>Transacciones</h1>
+    <div class="page-header-main">
+        <h1>Transacciones</h1>
+    </div>
+    <div class="header-actions">
+        <div class="search-box">
+            <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input class="input" type="search" data-table-search="#transaction-table" placeholder="Buscar transacción...">
+        </div>
+    </div>
 </div>
 
 <div class="box">
-    <p class="title is-4">Nueva Transacción</p>
+    <p class="title is-5">Nueva Transacción</p>
     <form method="POST" action="/transactions" class="character-form" style="margin-bottom:1rem">
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="form-row">
@@ -17,7 +27,7 @@
             <div class="field">
                 <label class="label">Personaje</label>
                 <div class="control">
-                    <div class="select">
+                    <div class="select is-fullwidth">
                         <select name="character_id" required>
                             <option value="">Seleccionar...</option>
                             {{range .Characters}}
@@ -46,27 +56,36 @@
             </div>
         </div>
     </form>
-    <table class="table is-fullwidth is-striped is-hoverable">
-        <thead>
-            <tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-            {{range .Transactions}}
-            <tr>
-                <td>{{.Date.Format "2006-01-02"}}</td>
-                <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
-                <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
-                <td>{{.Notes}}</td>
-                <td>
-                    <a href="/transactions/detail/{{.ID}}/edit" class="button is-small is-info">Editar</a>
-                    <form method="POST" action="/transactions/detail/{{.ID}}/delete" class="inline-form" onsubmit="return confirm('¿Estás seguro?')">
-                        <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
-                        <button type="submit" class="button is-small is-danger">Eliminar</button>
-                    </form>
-                </td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+
+    {{if .Transactions}}
+    <div class="table-scroll">
+        <table class="table is-fullwidth is-striped is-hoverable" id="transaction-table">
+            <thead>
+                <tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+                {{range .Transactions}}
+                <tr>
+                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
+                    <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
+                    <td>{{.Notes}}</td>
+                    <td class="table-actions">
+                        <a href="/transactions/detail/{{.ID}}/edit" class="button is-small is-info is-light">Editar</a>
+                        <form method="POST" action="/transactions/detail/{{.ID}}/delete" class="inline-form" data-confirm="¿Estás seguro de eliminar esta transacción?">
+                            <input type="hidden" name="csrf_token" value="{{$.CSRFToken}}">
+                            <button type="submit" class="button is-small is-danger is-light">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <p class="empty-title">Sin transacciones registradas</p>
+    </div>
+    {{end}}
 </div>
 {{end}}
