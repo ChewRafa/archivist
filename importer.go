@@ -651,6 +651,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 	}
 
 	guildMap := make(map[string]*Guild)
+	lastGuildName := ""
 
 	for i, row := range rows {
 		if i == 0 || len(row) < 3 {
@@ -665,6 +666,9 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		if guildName == "" && memberName == "" {
 			continue
+		}
+		if guildName != "" {
+			lastGuildName = guildName
 		}
 
 		if guildName != "" {
@@ -744,9 +748,15 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		if memberName != "" {
 			var member Character
 			if err := tx.Where("name = ?", memberName).First(&member).Error; err == nil {
-				target, ok := guildMap[guildName]
+				effectiveGuildName := guildName
+				if effectiveGuildName == "" {
+					effectiveGuildName = lastGuildName
+				}
+				if effectiveGuildName == "" {
+					continue
+				}
+				target, ok := guildMap[effectiveGuildName]
 				if !ok || target == nil {
-					// guildName empty means orphan member row; skip (join table is truth, guild_name cache will stay)
 					continue
 				}
 				// Idempotency: already member?

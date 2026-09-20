@@ -34,10 +34,14 @@ func ValidateGuildJoin(tx *gorm.DB, player string, targetGuildID uint, character
 		return nil
 	}
 
-	// Guild capacity: count via join table (source of truth) — counts all members regardless of status
+	// Guild capacity: count only active members (Activo + not soft-deleted)
 	var guildCount int64
-	tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ?", targetGuildID).Scan(&guildCount)
-	// If character already in this guild, don't count it as new
+	tx.Raw(`
+		SELECT COUNT(*) FROM guild_members gm
+		JOIN characters c ON c.id = gm.character_id
+		WHERE gm.guild_id = ? AND c.status = 'Activo' AND c.deleted_at IS NULL
+	`, targetGuildID).Scan(&guildCount)
+	// If character already in this guild, don't count it as new (and only if active)
 	if characterID != 0 {
 		var already int64
 		tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ? AND character_id = ?", targetGuildID, characterID).Scan(&already)

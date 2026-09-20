@@ -570,7 +570,7 @@ func TransactionDeleteHandler(c *gin.Context) {
 
 func GuildsHandler(c *gin.Context) {
 	var guilds []Guild
-	DB.Preload("Leader").Preload("Members").Order("name ASC").Find(&guilds)
+	DB.Preload("Leader").Preload("Members", "status = ? AND deleted_at IS NULL", "Activo").Order("name ASC").Find(&guilds)
 
 	render(c, http.StatusOK, "guilds.html", gin.H{
 		"Title":      "Gremios",
@@ -683,7 +683,7 @@ func GuildCreateHandler(c *gin.Context) {
 func GuildDetailHandler(c *gin.Context) {
 	id := c.Param("id")
 	var guild Guild
-	if err := DB.Preload("Leader").Preload("Members").First(&guild, id).Error; err != nil {
+	if err := DB.Preload("Leader").Preload("Members", "status = ? AND deleted_at IS NULL", "Activo").First(&guild, id).Error; err != nil {
 		c.Redirect(http.StatusFound, "/guilds")
 		return
 	}
