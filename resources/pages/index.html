@@ -60,22 +60,34 @@
     <div class="column is-4">
         <div class="box">
             <p class="title is-5">Distribución por Clase</p>
-            <ul class="dist-list">
+            <div class="level-bars">
                 {{range $class, $item := .ClassDist}}
-                <li><span>{{$class}}</span><span class="count">{{$item.Count}}</span></li>
+                <div class="level-bar">
+                    <span class="level-label is-wide" title="{{$class}}">{{$class}}</span>
+                    <div class="bar-container">
+                        <div class="bar" style="width: {{printf "%.2f" $item.Percentage}}%"></div>
+                    </div>
+                    <span class="bar-count">{{$item.Count}}</span>
+                </div>
                 {{end}}
-            </ul>
+            </div>
         </div>
     </div>
 
     <div class="column is-4">
         <div class="box">
             <p class="title is-5">Distribución por Especie</p>
-            <ul class="dist-list">
+            <div class="level-bars">
                 {{range $species, $item := .SpeciesDist}}
-                <li><span>{{$species}}</span><span class="count">{{$item.Count}}</span></li>
+                <div class="level-bar">
+                    <span class="level-label is-wide" title="{{$species}}">{{$species}}</span>
+                    <div class="bar-container">
+                        <div class="bar" style="width: {{printf "%.2f" $item.Percentage}}%"></div>
+                    </div>
+                    <span class="bar-count">{{$item.Count}}</span>
+                </div>
                 {{end}}
-            </ul>
+            </div>
         </div>
     </div>
 </div>

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -46,7 +47,7 @@ var sheetKeyToName = map[string]string{
 	"registry":     "Registro de Personajes",
 	"missions":     "Registro de Misiones",
 	"guilds":       "Gremios",
-	"guildeconomy": "EconomÃ­a de Gremios",
+	"guildeconomy": "Economía de Gremios",
 }
 
 var allSheetKeys = func() []string {
@@ -743,20 +744,41 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		if memberName != "" {
 			var member Character
 			if err := tx.Where("name = ?", memberName).First(&member).Error; err == nil {
-				for _, g := range guildMap {
-					var existing int64
-					tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ? AND character_id = ?", g.ID, member.ID).Scan(&existing)
-					if existing == 0 {
-						tx.Exec("INSERT INTO guild_members (guild_id, character_id) VALUES (?, ?)", g.ID, member.ID)
-					}
+				target, ok := guildMap[guildName]
+				if !ok || target == nil {
+					// guildName empty means orphan member row; skip (join table is truth, guild_name cache will stay)
+					continue
 				}
+				// Idempotency: already member?
+				var existing int64
+				tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ? AND character_id = ?", target.ID, member.ID).Scan(&existing)
+				if existing > 0 {
+					// Keep cache in sync even if already member
+					_ = SyncCharacterGuildName(tx, member.ID)
+					continue
+				}
+				// Validate business rules: 15 per guild, 3 activos per player same guild, no cross-guild (activos only)
+				if err := ValidateGuildJoin(tx, member.Player, target.ID, member.ID, member.Status); err != nil {
+					if errors.Is(err, ErrGuildFull) {
+						result.Errors = append(result.Errors, fmt.Sprintf("Gremio lleno (%s) - no se añadió %s: %v", target.Name, member.Name, err))
+					} else if errors.Is(err, ErrPlayerLimit) {
+						result.Errors = append(result.Errors, fmt.Sprintf("Jugador límite 3 activos (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
+					} else if errors.Is(err, ErrCrossGuild) {
+						result.Errors = append(result.Errors, fmt.Sprintf("Jugador en otro gremio (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
+					} else {
+						result.Errors = append(result.Errors, fmt.Sprintf("No se añadió %s a %s: %v", member.Name, target.Name, err))
+					}
+					continue
+				}
+				tx.Exec("INSERT INTO guild_members (guild_id, character_id) VALUES (?, ?)", target.ID, member.ID)
+				_ = SyncCharacterGuildName(tx, member.ID)
 			}
 		}
 	}
 }
 
 func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
-	sheet := "EconomÃ­a de Gremios"
+	sheet := "Economía de Gremios"
 	rows, err := f.GetRows(sheet)
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Error reading %s: %v", sheet, err))

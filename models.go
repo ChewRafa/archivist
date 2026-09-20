@@ -97,14 +97,16 @@ type Guild struct {
 	Name         string      `gorm:"size:255;uniqueIndex" json:"name"`
 	LeaderID     *uint       `json:"leader_id"`
 	Leader       *Character  `gorm:"foreignKey:LeaderID" json:"leader"`
-	MemberIDs    string      `gorm:"type:text" json:"-"`
+	MemberIDs    string      `gorm:"type:text" json:"-"` // legacy, unused; membership is via guild_members
 	HallType     string      `gorm:"size:100" json:"hall_type"`
 	Notes        string      `gorm:"type:text" json:"notes"`
 	CostOfLiving float64     `json:"cost_of_living"`
 	Treasury     float64     `json:"treasury"`
 	RegisteredAt *time.Time  `json:"registered_at"`
 	ApprovedAt   *time.Time  `json:"approved_at"`
-	Members      []Character `gorm:"many2many:guild_members;" json:"members"`
+	// Members is authoritative via guild_members join table (unique guild_id+character_id).
+	// Character.GuildName is a display cache synced via SyncCharacterGuildName.
+	Members []Character `gorm:"many2many:guild_members;" json:"members"`
 	CreatedAt    time.Time   `json:"created_at"`
 	UpdatedAt    time.Time   `json:"updated_at"`
 }

@@ -462,6 +462,13 @@ a.stat-card:hover {
     flex: none;
 }
 
+.level-label.is-wide {
+    width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .bar-container {
     flex: 1;
     background: var(--bulma-background);
