@@ -1,4 +1,4 @@
-package db
+package main
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"codeberg.org/chewrafa/archivist/internal/models"
 	sqlite "github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -34,16 +33,16 @@ func Init(dbPath string) {
 	deduplicateTable("guild_transactions", []string{"date", "guild_id", "amount", "notes"})
 
 	err = DB.AutoMigrate(
-		&models.User{},
-		&models.Character{},
-		&models.DLUsage{},
-		&models.Transaction{},
-		&models.CostOfLiving{},
-		&models.CharacterRegistry{},
-		&models.Mission{},
-		&models.MissionEntry{},
-		&models.Guild{},
-		&models.GuildTransaction{},
+		&User{},
+		&Character{},
+		&DLUsage{},
+		&Transaction{},
+		&CostOfLiving{},
+		&CharacterRegistry{},
+		&Mission{},
+		&MissionEntry{},
+		&Guild{},
+		&GuildTransaction{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database: ", err)
@@ -52,8 +51,8 @@ func Init(dbPath string) {
 	// Drop orphan columns from old CostOfLiving model
 	migrator := DB.Migrator()
 	for _, col := range []string{"inn", "guardiana", "pluma_negra", "hijos_alba"} {
-		if migrator.HasColumn(&models.CostOfLiving{}, col) {
-			migrator.DropColumn(&models.CostOfLiving{}, col)
+		if migrator.HasColumn(&CostOfLiving{}, col) {
+			migrator.DropColumn(&CostOfLiving{}, col)
 		}
 	}
 

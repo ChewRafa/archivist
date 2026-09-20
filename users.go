@@ -1,10 +1,8 @@
-package services
+package main
 
 import (
 	"errors"
 
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,16 +20,16 @@ func CreateUser(username, password string) error {
 	if err != nil {
 		return err
 	}
-	user := models.User{
+	user := User{
 		Username:     username,
 		PasswordHash: hash,
 	}
-	return db.DB.Create(&user).Error
+	return DB.Create(&user).Error
 }
 
-func Authenticate(username, password string) (*models.User, error) {
-	var user models.User
-	if err := db.DB.Where("username = ?", username).First(&user).Error; err != nil {
+func Authenticate(username, password string) (*User, error) {
+	var user User
+	if err := DB.Where("username = ?", username).First(&user).Error; err != nil {
 		return nil, errors.New("usuario o contraseña incorrectos")
 	}
 	if err := CheckPassword(user.PasswordHash, password); err != nil {

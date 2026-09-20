@@ -1,4 +1,4 @@
-package handlers
+package main
 
 import (
 	"crypto/rand"
@@ -8,24 +8,22 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/models"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 var templates map[string]*template.Template
 
-func init() {
+func loadTemplates() {
 	funcMap := template.FuncMap{
 		"mul":  func(a, b int) int { return a * b },
 		"add3": func(a, b, c float64) float64 { return a + b + c },
 	}
 
-	base := template.Must(template.New("base.html").Funcs(funcMap).ParseFiles("templates/base.html"))
+	base := template.Must(template.New("base.html").Funcs(funcMap).ParseFiles("resources/base.html"))
 	templates = make(map[string]*template.Template)
 
-	pages, err := filepath.Glob("templates/pages/*.html")
+	pages, err := filepath.Glob("resources/pages/*.html")
 	if err != nil {
 		log.Fatal("Failed to glob page templates: ", err)
 	}
@@ -81,8 +79,8 @@ func render(c *gin.Context, status int, page string, data gin.H) {
 	if data["User"] == nil {
 		userID := session.Get("user_id")
 		if userID != nil {
-			var user models.User
-			if err := db.DB.First(&user, userID).Error; err == nil {
+			var user User
+			if err := DB.First(&user, userID).Error; err == nil {
 				data["User"] = &user
 			}
 		}

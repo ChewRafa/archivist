@@ -1,3 +1,5 @@
+//go:build !importer
+
 package main
 
 import (
@@ -7,10 +9,6 @@ import (
 	"net/http"
 	"os"
 
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/handlers"
-	"codeberg.org/chewrafa/archivist/internal/models"
-	"codeberg.org/chewrafa/archivist/internal/services"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -24,14 +22,14 @@ func main() {
 	if dbPath == "" {
 		dbPath = "data/archivist.db"
 	}
-	db.Init(dbPath)
+	Init(dbPath)
 
 	if adminUser := os.Getenv("ADMIN_USERNAME"); adminUser != "" {
 		if adminPass := os.Getenv("ADMIN_PASSWORD"); adminPass != "" {
 			var count int64
-			db.DB.Model(&models.User{}).Count(&count)
+			DB.Model(&User{}).Count(&count)
 			if count == 0 {
-				if err := services.CreateUser(adminUser, adminPass); err != nil {
+				if err := CreateUser(adminUser, adminPass); err != nil {
 					log.Printf("Failed to create admin user '%s': %s", adminUser, err)
 				} else {
 					log.Printf("Admin user '%s' created from environment variables", adminUser)
@@ -47,7 +45,7 @@ func main() {
 		if password == "" {
 			log.Fatal("Password cannot be empty")
 		}
-		if err := services.CreateUser(*createAdmin, password); err != nil {
+		if err := CreateUser(*createAdmin, password); err != nil {
 			log.Fatal("Failed to create user: ", err)
 		}
 		log.Printf("User '%s' created successfully", *createAdmin)
@@ -74,7 +72,8 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	handlers.SetupRoutes(r)
+	loadTemplates()
+	SetupRoutes(r)
 
 	port := os.Getenv("PORT")
 	if port == "" {

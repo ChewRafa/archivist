@@ -35,7 +35,7 @@ TTRPG Character and Guild Tracking — a web application built with Go for manag
 go build ./...
 
 # Start the development server
-go run cmd/server/main.go
+go run .
 ```
 
 Open http://localhost:8080 in your browser and log in.
@@ -104,7 +104,7 @@ The app auto-detects the environment:
 ### Running the server
 
 ```bash
-go run cmd/server/main.go
+go run .
 ```
 
 Starts the HTTP server on `:8080`. The SQLite database is auto-created at `data/archivist.db` on first run.
@@ -112,7 +112,7 @@ Starts the HTTP server on `:8080`. The SQLite database is auto-created at `data/
 ### Creating an admin user
 
 ```bash
-go run cmd/server/main.go --create-admin <username>
+go run . --create-admin <username>
 ```
 
 You will be prompted for a password. The command creates the user and exits.
@@ -120,7 +120,7 @@ You will be prompted for a password. The command creates the user and exits.
 ### Importing data from Excel
 
 ```bash
-go run cmd/importer/main.go <path-to-excel-file>
+go run -tags importer . <path-to-excel-file>
 ```
 
 Imports data from an Excel file with Spanish sheet names. See [Excel Import Format](#excel-import-format) for details.
@@ -128,38 +128,33 @@ Imports data from an Excel file with Spanish sheet names. See [Excel Import Form
 ## Project Structure
 
 ```
-cmd/
-├── server/main.go         HTTP server entry point
-└── importer/main.go       Excel → SQLite import tool
+main.go                HTTP server entry point (server binary)
+importer_main.go       Excel → SQLite import tool (importer binary)
+routes.go              Route setup and all CRUD handlers
+auth.go                Login/logout handlers
+middleware.go          Auth and CSRF middleware
+render.go              Template compilation and rendering
+db.go                  GORM + SQLite/PostgreSQL initialization and auto-migration
+models.go              All models: User, Character, DLUsage, Transaction,
+                       CostOfLiving, CharacterRegistry, Mission, MissionEntry,
+                       Guild, GuildTransaction
+services.go            XP/level/gold/renown calculations
+users.go               Password hashing and user authentication
+guild_treasury.go      Guild treasury sync
+importer.go            Excel import engine
+importer_handlers.go   Web-based Excel import handler
 
-internal/
-├── db/db.go               GORM + SQLite initialization and auto-migration
-├── handlers/
-│   ├── auth.go            Login/logout handlers
-│   ├── handlers.go        All CRUD handlers and route setup
-│   ├── importer.go        Web-based Excel import handler
-│   ├── middleware.go      Auth and CSRF middleware
-│   └── render.go          Template compilation and rendering
-├── models/
-│   ├── models.go          Character, Transaction, CostOfLiving, CharacterRegistry,
-│                          Mission, MissionEntry, Guild
-│   └── user.go            User model
-└── services/
-    ├── auth.go            Password hashing and user authentication
-    └── services.go        XP/level/gold/renown calculations
-
-templates/
-├── base.html              Base layout with sidebar and CSRF
-├── login.html             Standalone login page
-└── pages/                 Content templates for each page
-
-static/
-├── app.css                Custom styles
-└── bulma.min.css          Bulma CSS framework
+resources/
+├── base.html          Base layout with sidebar and CSRF
+├── login.html         Standalone login page
+├── pages/             Content templates for each page
+└── static/            CSS and other static assets
 
 data/
-└── archivist.db           SQLite database (auto-created)
+└── archivist.db       SQLite database (auto-created)
 ```
+
+Both binaries live in a single flat `package main`. The server is built by default (`go build -o app .`); the importer shares the same code and is built with a build tag: `go build -tags importer -o importer .`.
 
 ## Routes
 
@@ -244,7 +239,7 @@ Guild treasury (`Arcas`) is computed as the sum of all economy transactions for 
 The database auto-migrates on every start — schema changes are applied live. Set `GIN_MODE=debug` for verbose Gin output:
 
 ```bash
-GIN_MODE=debug go run cmd/server/main.go
+GIN_MODE=debug go run .
 ```
 
 ## License

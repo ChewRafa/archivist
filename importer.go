@@ -1,4 +1,4 @@
-package services
+package main
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/models"
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
@@ -48,7 +46,7 @@ var sheetKeyToName = map[string]string{
 	"registry":     "Registro de Personajes",
 	"missions":     "Registro de Misiones",
 	"guilds":       "Gremios",
-	"guildeconomy": "Economía de Gremios",
+	"guildeconomy": "EconomÃ­a de Gremios",
 }
 
 var allSheetKeys = func() []string {
@@ -196,7 +194,7 @@ func ImportExcel(f *excelize.File, opts ...ImportOptions) ImportResult {
 		opt = &opts[0]
 	}
 
-	err := db.DB.Transaction(func(tx *gorm.DB) error {
+	err := DB.Transaction(func(tx *gorm.DB) error {
 		if shouldImportSheet(opt, "characters") {
 			importCharacters(tx, f, &result)
 		}
@@ -258,7 +256,7 @@ func importCharacters(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			guildName = strings.TrimSpace(row[10])
 		}
 
-		character := models.Character{
+		character := Character{
 			Number:    parseInt(row[0]),
 			Player:    strings.TrimSpace(row[1]),
 			Name:      name,
@@ -268,7 +266,7 @@ func importCharacters(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			GuildName: guildName,
 		}
 
-		var existing models.Character
+		var existing Character
 		err := tx.Where("name = ?", character.Name).First(&existing).Error
 		if err == nil {
 			result.CharactersSkipped++
@@ -298,7 +296,7 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		var character models.Character
+		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
 			continue
 		}
@@ -328,7 +326,7 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		if len(row) > 4 {
 			desc = strings.TrimSpace(row[4])
 		}
-		usage := models.DLUsage{
+		usage := DLUsage{
 			Date:        *lastDate,
 			CharacterID: character.ID,
 			DLUsed:      dlVal,
@@ -336,7 +334,7 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			Description: desc,
 		}
 
-		var existing models.DLUsage
+		var existing DLUsage
 		err := tx.Where("date = ? AND character_id = ? AND dl_used = ? AND description = ?",
 			usage.Date, usage.CharacterID, usage.DLUsed, usage.Description).First(&existing).Error
 		if err == nil {
@@ -366,7 +364,7 @@ func importTransactions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		var character models.Character
+		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
 			continue
@@ -382,14 +380,14 @@ func importTransactions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		txEntry := models.Transaction{
+		txEntry := Transaction{
 			Date:        *dt,
 			CharacterID: character.ID,
 			Amount:      parseFloat(row[2]),
 			Notes:       strings.TrimSpace(row[3]),
 		}
 
-		var existing models.Transaction
+		var existing Transaction
 		err := tx.Where("date = ? AND character_id = ? AND amount = ? AND notes = ?",
 			txEntry.Date, txEntry.CharacterID, txEntry.Amount, txEntry.Notes).First(&existing).Error
 		if err == nil {
@@ -435,7 +433,7 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		var character models.Character
+		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
 			continue
 		}
@@ -467,13 +465,13 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				continue
 			}
 
-			cost := models.CostOfLiving{
+			cost := CostOfLiving{
 				Date:        *dt,
 				CharacterID: character.ID,
 				Amount:      amount,
 			}
 
-			var existing models.CostOfLiving
+			var existing CostOfLiving
 			err := tx.Where("date = ? AND character_id = ? AND amount = ?",
 				cost.Date, cost.CharacterID, cost.Amount).First(&existing).Error
 			if err == nil {
@@ -504,7 +502,7 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 			continue
 		}
 
-		var character models.Character
+		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
 			continue
@@ -520,7 +518,7 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 			continue
 		}
 
-		registry := models.CharacterRegistry{
+		registry := CharacterRegistry{
 			Date:        *dt,
 			CharacterID: character.ID,
 			Event:       strings.TrimSpace(row[2]),
@@ -534,7 +532,7 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 			registry.Notes = strings.TrimSpace(row[6])
 		}
 
-		var existing models.CharacterRegistry
+		var existing CharacterRegistry
 		err := tx.Where("date = ? AND character_id = ? AND event = ?",
 			registry.Date, registry.CharacterID, registry.Event).First(&existing).Error
 		if err == nil {
@@ -554,7 +552,7 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		return
 	}
 
-	var currentMission *models.Mission
+	var currentMission *Mission
 
 	for i, row := range rows {
 		if i == 0 || len(row) < 3 {
@@ -574,13 +572,13 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		if dateStr != "" && dm != "" {
 			dt := parseDate(dateStr)
 			if dt != nil {
-				mission := models.Mission{
+				mission := Mission{
 					Date: *dt,
 					DM:   dm,
 					Name: eventName,
 				}
 
-				var existing models.Mission
+				var existing Mission
 				err := tx.Where("date = ? AND dm = ? AND name = ?",
 					mission.Date, mission.DM, mission.Name).First(&existing).Error
 				if err == nil {
@@ -603,12 +601,12 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		var character models.Character
+		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
 			continue
 		}
 
-		entry := models.MissionEntry{
+		entry := MissionEntry{
 			MissionID:   currentMission.ID,
 			CharacterID: character.ID,
 		}
@@ -631,7 +629,7 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			entry.Notes = strings.TrimSpace(row[10])
 		}
 
-		var existing models.MissionEntry
+		var existing MissionEntry
 		err := tx.Where("mission_id = ? AND character_id = ?",
 			entry.MissionID, entry.CharacterID).First(&existing).Error
 		if err == nil {
@@ -651,7 +649,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		return
 	}
 
-	guildMap := make(map[string]*models.Guild)
+	guildMap := make(map[string]*Guild)
 
 	for i, row := range rows {
 		if i == 0 || len(row) < 3 {
@@ -682,7 +680,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				notes = strings.TrimSpace(row[7])
 			}
 
-			guild := &models.Guild{
+			guild := &Guild{
 				Name:         guildName,
 				CostOfLiving: col,
 				Notes:        notes,
@@ -700,13 +698,13 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 			leaderName := strings.TrimSpace(row[3])
 			if leaderName != "" {
-				var leader models.Character
+				var leader Character
 				if err := tx.Where("name = ?", leaderName).First(&leader).Error; err == nil {
 					guild.LeaderID = &leader.ID
 				}
 			}
 
-			var existing models.Guild
+			var existing Guild
 			err := tx.Where("name = ?", guild.Name).First(&existing).Error
 			if err == nil {
 				guildMap[guildName] = &existing
@@ -726,7 +724,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 					now := time.Now()
 					seedDate = &now
 				}
-				created, err := CreateGuildTransaction(tx, models.GuildTransaction{
+				created, err := CreateGuildTransaction(tx, GuildTransaction{
 					Date:    *seedDate,
 					GuildID: guildMap[guildName].ID,
 					Amount:  treasury,
@@ -743,7 +741,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		}
 
 		if memberName != "" {
-			var member models.Character
+			var member Character
 			if err := tx.Where("name = ?", memberName).First(&member).Error; err == nil {
 				for _, g := range guildMap {
 					var existing int64
@@ -758,7 +756,7 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 }
 
 func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
-	sheet := "Economía de Gremios"
+	sheet := "EconomÃ­a de Gremios"
 	rows, err := f.GetRows(sheet)
 	if err != nil {
 		result.Errors = append(result.Errors, fmt.Sprintf("Error reading %s: %v", sheet, err))
@@ -775,7 +773,7 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			continue
 		}
 
-		var guild models.Guild
+		var guild Guild
 		if err := tx.Where("name = ?", guildName).First(&guild).Error; err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Guild not found: %s", guildName))
 			continue
@@ -801,7 +799,7 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			notes = strings.TrimSpace(row[3])
 		}
 
-		created, err := CreateGuildTransaction(tx, models.GuildTransaction{
+		created, err := CreateGuildTransaction(tx, GuildTransaction{
 			Date:    *dt,
 			GuildID: guild.ID,
 			Amount:  amount,

@@ -28,24 +28,24 @@ help:
 build: build-server build-importer
 
 build-server:
-	$(GO) build -o $(BIN) ./cmd/server/
+	$(GO) build -o $(BIN) .
 
 build-importer:
-	$(GO) build -o importer ./cmd/importer/
+	$(GO) build -tags importer -o importer .
 
 run:
-	GIN_MODE=debug $(GO) run ./cmd/server/main.go
+	GIN_MODE=debug $(GO) run .
 
 run-release:
-	$(GO) run ./cmd/server/main.go
+	$(GO) run .
 
 dev: build run
 
 import:
-	$(GO) run ./cmd/importer/main.go ./$(EXCEL)
+	$(GO) run -tags importer . ./$(EXCEL)
 
 admin:
-	$(GO) run ./cmd/server/main.go --create-admin
+	$(GO) run . --create-admin
 
 tidy:
 	$(GO) mod tidy
@@ -57,7 +57,7 @@ fmt:
 	$(GO) fmt ./...
 
 clean:
-	rm -f $(BIN) importer $(DB)
+	rm -f $(BIN) importer app $(DB)
 
 db-reset:
 	rm -f $(DB)

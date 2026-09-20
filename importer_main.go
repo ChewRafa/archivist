@@ -1,3 +1,5 @@
+//go:build importer
+
 package main
 
 import (
@@ -6,8 +8,6 @@ import (
 	"log"
 	"strings"
 
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/services"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -19,7 +19,7 @@ func main() {
 		log.Fatal("Usage: importer [--sheets=...] <path-to-excel-file>")
 	}
 
-	db.Init("data/archivist.db")
+	Init("data/archivist.db")
 
 	f, err := excelize.OpenFile(flag.Arg(0))
 	if err != nil {
@@ -27,16 +27,16 @@ func main() {
 	}
 	defer f.Close()
 
-	var opts []services.ImportOptions
+	var opts []ImportOptions
 	if *sheetsFlag != "" {
 		sheets := strings.Split(*sheetsFlag, ",")
 		for i := range sheets {
 			sheets[i] = strings.TrimSpace(sheets[i])
 		}
-		opts = append(opts, services.ImportOptions{Sheets: sheets})
+		opts = append(opts, ImportOptions{Sheets: sheets})
 	}
 
-	result := services.ImportExcel(f, opts...)
+	result := ImportExcel(f, opts...)
 
 	fmt.Printf("Characters: %d (skipped %d)\n", result.Characters, result.CharactersSkipped)
 	fmt.Printf("DL Usages: %d (skipped %d)\n", result.DLUsages, result.DLUsagesSkipped)

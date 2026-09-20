@@ -1,9 +1,8 @@
-package handlers
+package main
 
 import (
 	"net/http"
 
-	"codeberg.org/chewrafa/archivist/internal/services"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +31,7 @@ func LoginPostHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := services.Authenticate(username, password)
+	user, err := Authenticate(username, password)
 	if err != nil {
 		c.HTML(http.StatusUnauthorized, "login.html", gin.H{
 			"Title": "Iniciar Sesión",

@@ -1,10 +1,9 @@
-package handlers
+package main
 
 import (
 	"fmt"
 	"net/http"
 
-	"codeberg.org/chewrafa/archivist/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 )
@@ -13,7 +12,7 @@ func ImportPageHandler(c *gin.Context) {
 	render(c, http.StatusOK, "import.html", gin.H{
 		"Title":      "Importar Datos",
 		"ActiveMenu": "import",
-		"Sheets":     services.AllSheetInfo(),
+		"Sheets":     AllSheetInfo(),
 	})
 }
 
@@ -60,12 +59,12 @@ func ImportPostHandler(c *gin.Context) {
 	defer f.Close()
 
 	selectedSheets := c.PostFormArray("sheets")
-	var opts []services.ImportOptions
+	var opts []ImportOptions
 	if len(selectedSheets) > 0 {
-		opts = append(opts, services.ImportOptions{Sheets: selectedSheets})
+		opts = append(opts, ImportOptions{Sheets: selectedSheets})
 	}
 
-	result := services.ImportExcel(f, opts...)
+	result := ImportExcel(f, opts...)
 
 	summary := fmt.Sprintf(
 		"Personajes: %d (%d omitidos) | Usos de DL: %d (%d omitidos) | Compras: %d (%d omitidos) | Costos de Vida: %d (%d omitidos) | Registros: %d (%d omitidos) | Misiones: %d (%d omitidos) | Entradas: %d (%d omitidos) | Gremios: %d (%d omitidos) | Economía de Gremios: %d (%d omitidas)",
@@ -85,6 +84,6 @@ func ImportPostHandler(c *gin.Context) {
 		"ActiveMenu": "import",
 		"Result":     &result,
 		"Summary":    summary,
-		"Sheets":     services.AllSheetInfo(),
+		"Sheets":     AllSheetInfo(),
 	})
 }

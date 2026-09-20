@@ -1,9 +1,4 @@
-package services
-
-import (
-	"codeberg.org/chewrafa/archivist/internal/db"
-	"codeberg.org/chewrafa/archivist/internal/models"
-)
+package main
 
 var XPThresholds = []float64{
 	0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
@@ -27,34 +22,34 @@ func CalculateLevel(xp float64) int {
 func GetGoldBalance(characterID uint) float64 {
 	var total float64
 
-	db.DB.Model(&models.CharacterRegistry{}).
+	DB.Model(&CharacterRegistry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(gold), 0)").
 		Scan(&total)
 
 	var missionGold float64
-	db.DB.Model(&models.MissionEntry{}).
+	DB.Model(&MissionEntry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(gold), 0)").
 		Scan(&missionGold)
 	total += missionGold
 
 	var usageGold float64
-	db.DB.Model(&models.DLUsage{}).
+	DB.Model(&DLUsage{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(gold_change), 0)").
 		Scan(&usageGold)
 	total += usageGold
 
 	var txGold float64
-	db.DB.Model(&models.Transaction{}).
+	DB.Model(&Transaction{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&txGold)
 	total += txGold
 
 	var colGold float64
-	db.DB.Model(&models.CostOfLiving{}).
+	DB.Model(&CostOfLiving{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&colGold)
@@ -66,13 +61,13 @@ func GetGoldBalance(characterID uint) float64 {
 func GetRenownTotal(characterID uint) float64 {
 	var total float64
 
-	db.DB.Model(&models.CharacterRegistry{}).
+	DB.Model(&CharacterRegistry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(renown), 0)").
 		Scan(&total)
 
 	var missionRenown float64
-	db.DB.Model(&models.MissionEntry{}).
+	DB.Model(&MissionEntry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(renown), 0)").
 		Scan(&missionRenown)
@@ -84,13 +79,13 @@ func GetRenownTotal(characterID uint) float64 {
 func GetXPTotal(characterID uint) float64 {
 	var total float64
 
-	db.DB.Model(&models.CharacterRegistry{}).
+	DB.Model(&CharacterRegistry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(experience), 0)").
 		Scan(&total)
 
 	var missionXP float64
-	db.DB.Model(&models.MissionEntry{}).
+	DB.Model(&MissionEntry{}).
 		Where("character_id = ?", characterID).
 		Select("COALESCE(SUM(xp_mission + xp_report + xp_guild), 0)").
 		Scan(&missionXP)
@@ -100,7 +95,7 @@ func GetXPTotal(characterID uint) float64 {
 }
 
 type CharacterStats struct {
-	models.Character
+	Character
 	XP          float64 `json:"xp"`
 	Level       int     `json:"level"`
 	GoldBalance float64 `json:"gold_balance"`
@@ -108,8 +103,8 @@ type CharacterStats struct {
 }
 
 func GetCharacterWithStats(id uint) (*CharacterStats, error) {
-	var character models.Character
-	if err := db.DB.First(&character, id).Error; err != nil {
+	var character Character
+	if err := DB.First(&character, id).Error; err != nil {
 		return nil, err
 	}
 
@@ -125,8 +120,8 @@ func GetCharacterWithStats(id uint) (*CharacterStats, error) {
 }
 
 func GetAllCharactersWithStats() ([]CharacterStats, error) {
-	var characters []models.Character
-	db.DB.Find(&characters)
+	var characters []Character
+	DB.Find(&characters)
 
 	var stats []CharacterStats
 	for _, c := range characters {
