@@ -107,5 +107,7 @@ func render(c *gin.Context, status int, page string, data gin.H) {
 
 	c.Status(status)
 	c.Header("Content-Type", "text/html; charset=utf-8")
-	tmpl.ExecuteTemplate(c.Writer, "base.html", data)
+	if err := tmpl.ExecuteTemplate(c.Writer, "base.html", data); err != nil {
+		log.Printf("template %s execute error: %v", page, err)
+	}
 }
