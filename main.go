@@ -16,7 +16,13 @@ import (
 
 func main() {
 	createAdmin := flag.String("create-admin", "", "Create an admin user and exit")
+	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(Version)
+		return
+	}
 
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
@@ -69,7 +75,7 @@ func main() {
 	r.Use(sessions.Sessions("archivist_session", store))
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "version": Version})
 	})
 
 	loadTemplates()

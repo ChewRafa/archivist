@@ -25,13 +25,16 @@ help:
 	@echo "  test          go test ./..."
 	@echo "  help          Show this message"
 
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS  = -X main.Version=$(VERSION)
+
 build: build-server build-importer
 
 build-server:
-	$(GO) build -o $(BIN) .
+	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN) .
 
 build-importer:
-	$(GO) build -tags importer -o importer .
+	$(GO) build -tags importer -ldflags "$(LDFLAGS)" -o importer .
 
 run:
 	GIN_MODE=debug $(GO) run .

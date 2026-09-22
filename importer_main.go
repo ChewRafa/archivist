@@ -14,7 +14,13 @@ import (
 func main() {
 	log.SetPrefix("[importer] ")
 	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds,guildeconomy")
+	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(Version)
+		return
+	}
 
 	if flag.NArg() < 1 {
 		log.Fatal("Usage: importer [--sheets=...] <path-to-excel-file>")

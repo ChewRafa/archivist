@@ -1,5 +1,7 @@
 # Archivist
 
+> **Version:** `v0.1.0-alpha.1` (preliminary) — see [CHANGELOG.md](CHANGELOG.md)
+
 TTRPG Character and Guild Tracking — a web application built with Go for managing characters, missions, transactions, and guilds in tabletop role-playing games.
 
 ## Features
@@ -241,6 +243,20 @@ The database auto-migrates on every start — schema changes are applied live. S
 ```bash
 GIN_MODE=debug go run .
 ```
+
+### Versioning
+
+This project uses [Semantic Versioning](https://semver.org). The current version is injected at build time:
+
+```bash
+go run . --version          # prints Version (dev if no tag)
+go build -ldflags "-X main.Version=v0.1.0-alpha.1" -o app .
+make build                  # auto-derives VERSION from git describe --tags
+./build.sh                  # same, used by Render
+curl http://localhost:8080/health  # {"status":"ok","version":"v0.1.0-alpha.1"}
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
