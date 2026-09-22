@@ -3,21 +3,43 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
+var spanishMonthAbbr = [12]string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"}
+
+func formatDate(v any) string {
+	switch t := v.(type) {
+	case time.Time:
+		if t.IsZero() {
+			return "—"
+		}
+		return fmt.Sprintf("%02d/%s/%04d", t.Day(), spanishMonthAbbr[t.Month()-1], t.Year())
+	case *time.Time:
+		if t == nil || t.IsZero() {
+			return "—"
+		}
+		return fmt.Sprintf("%02d/%s/%04d", t.Day(), spanishMonthAbbr[t.Month()-1], t.Year())
+	default:
+		return "—"
+	}
+}
+
 var templates map[string]*template.Template
 
 func loadTemplates() {
 	funcMap := template.FuncMap{
-		"mul":  func(a, b int) int { return a * b },
-		"add3": func(a, b, c float64) float64 { return a + b + c },
+		"mul":        func(a, b int) int { return a * b },
+		"add3":       func(a, b, c float64) float64 { return a + b + c },
+		"formatDate": formatDate,
 	}
 
 	base := template.Must(template.New("base.html").Funcs(funcMap).ParseFiles("resources/base.html"))

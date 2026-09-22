@@ -70,7 +70,7 @@
             <tbody>
                 {{range .Usages}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
                     <td class="has-text-danger">{{.DLUsed}}</td>
                     <td>{{printf "%.1f" .GoldChange}}</td>

@@ -96,7 +96,7 @@
             <tbody>
                 {{range .Registries}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td>{{.Event}}</td>
                     <td>{{printf "%.0f" .Experience}}</td>
                     <td class="gold-value">{{printf "%.1f" .Gold}}</td>
@@ -119,7 +119,7 @@
             <tbody>
                 {{range .MissionEntries}}
                 <tr>
-                    <td>{{.Mission.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Mission.Date.Format "2006-01-02"}}">{{formatDate .Mission.Date}}</td>
                     <td><a href="/missions/detail/{{.Mission.ID}}" class="char-link">{{.Mission.Name}}</a></td>
                     <td>{{printf "%.0f" .XPMission}}</td>
                     <td>{{printf "%.0f" .XPReport}}</td>
@@ -144,7 +144,7 @@
             <tbody>
                 {{range .DLUsages}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td>{{.DLUsed}}</td>
                     <td>{{printf "%.1f" .GoldChange}}</td>
                     <td>{{.Description}}</td>
@@ -165,7 +165,7 @@
             <tbody>
                 {{range .Transactions}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
                     <td>{{.Notes}}</td>
                 </tr>
@@ -185,7 +185,7 @@
             <tbody>
                 {{range .CostOfLivings}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td class="has-text-danger">{{printf "%.1f" .Amount}}</td>
                     <td>{{.Notes}}</td>
                 </tr>

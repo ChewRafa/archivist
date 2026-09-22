@@ -46,13 +46,13 @@
     <div class="column is-4">
         <div class="stat-card">
             <p class="heading">Registro</p>
-            <p style="margin-top:0.35rem">{{if .Guild.RegisteredAt}}{{.Guild.RegisteredAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{formatDate .Guild.RegisteredAt}}</p>
         </div>
     </div>
     <div class="column is-4">
         <div class="stat-card">
             <p class="heading">Aprobación</p>
-            <p style="margin-top:0.35rem">{{if .Guild.ApprovedAt}}{{.Guild.ApprovedAt.Format "2006-01-02"}}{{else}}—{{end}}</p>
+            <p style="margin-top:0.35rem">{{formatDate .Guild.ApprovedAt}}</p>
         </div>
     </div>
 </div>
@@ -130,7 +130,7 @@
             <tbody>
                 {{range .Transactions}}
                 <tr>
-                    <td>{{.Date.Format "2006-01-02"}}</td>
+                    <td data-sort-value="{{.Date.Format "2006-01-02"}}">{{formatDate .Date}}</td>
                     <td class="{{if ge .Amount 0.0}}has-text-success{{else}}has-text-danger{{end}}">{{printf "%.1f" .Amount}}</td>
                     <td>{{.Notes}}</td>
                     <td class="table-actions">

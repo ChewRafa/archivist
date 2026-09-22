@@ -105,7 +105,7 @@
                     <tbody>
                         {{range .RecentMissions}}
                         <tr>
-                            <td>{{.Date.Format "2006-01-02"}}</td>
+                            <td>{{formatDate .Date}}</td>
                             <td>{{.DM}}</td>
                             <td><a href="/missions/detail/{{.ID}}" class="char-link">{{.Name}}</a></td>
                             <td>{{len .Entries}}</td>
@@ -136,7 +136,7 @@
                     <tbody>
                         {{range .RecentDLUsages}}
                         <tr>
-                            <td>{{.Date.Format "2006-01-02"}}</td>
+                            <td>{{formatDate .Date}}</td>
                             <td><a href="/characters/detail/{{.CharacterID}}" class="char-link">{{.Character.Name}}</a></td>
                             <td>{{.DLUsed}}</td>
                             <td>{{.Description}}</td>

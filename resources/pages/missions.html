@@ -24,7 +24,7 @@
         <p class="card-header-title"><a href="/missions/detail/{{.ID}}" class="char-link">{{.Name}}</a></p>
         <div class="card-header-icon">
             <span class="tags has-addons">
-                <span class="tag">{{.Date.Format "2006-01-02"}}</span>
+                <span class="tag">{{formatDate .Date}}</span>
                 <span class="tag is-info">DM: {{.DM}}</span>
                 <span class="tag is-light">{{len .Entries}} personajes</span>
             </span>
