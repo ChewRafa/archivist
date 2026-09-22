@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -849,6 +848,4 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 	}
 }
 
-func init() {
-	log.SetPrefix("[importer] ")
-}
+

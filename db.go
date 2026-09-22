@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	sqlite "github.com/glebarez/sqlite"
@@ -19,6 +20,14 @@ func Init(dbPath string) {
 	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
 		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	} else {
+		if dbPath != ":memory:" && !strings.HasPrefix(dbPath, "file:") {
+			dir := filepath.Dir(dbPath)
+			if dir != "." && dir != "" {
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					log.Fatal("Failed to create database directory: ", err)
+				}
+			}
+		}
 		DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	}
 	if err != nil {

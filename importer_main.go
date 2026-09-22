@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	log.SetPrefix("[importer] ")
 	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds,guildeconomy")
 	flag.Parse()
 
