@@ -68,7 +68,7 @@
     <p class="title is-5">Miembros ({{len .Guild.Members}})</p>
     {{if .Guild.Members}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead>
                 <tr><th>Nombre</th><th>Clase</th><th>Especie</th><th>Estado</th></tr>
             </thead>
@@ -123,9 +123,9 @@
     </form>
     {{if .Transactions}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead>
-                <tr><th>Fecha</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
+                <tr><th>Fecha</th><th>Monto</th><th>Notas</th><th data-unsortable>Acciones</th></tr>
             </thead>
             <tbody>
                 {{range .Transactions}}

@@ -847,5 +847,3 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 		}
 	}
 }
-
-

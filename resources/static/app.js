@@ -143,6 +143,99 @@
         }, true);
     }
 
+    /* ---------- Sortable tables ---------- */
+    function initTableSort() {
+        var tables = document.querySelectorAll("table.sortable");
+        Array.prototype.forEach.call(tables, function (table) {
+            var headers = table.querySelectorAll("thead th");
+            var tbody = table.tBodies[0];
+            if (!tbody || !headers.length) return;
+
+            // Auto-mark Acciones column as unsortable if not already marked
+            Array.prototype.forEach.call(headers, function (th) {
+                var text = th.textContent.trim().toLowerCase();
+                if (text === "acciones" || text === "acción") {
+                    th.setAttribute("data-unsortable", "");
+                }
+            });
+
+            function getCellValue(row, idx) {
+                var cell = row.cells[idx];
+                if (!cell) return "";
+                // Prefer data-sort-value if present
+                if (cell.getAttribute("data-sort-value") !== null) {
+                    return cell.getAttribute("data-sort-value");
+                }
+                return cell.textContent.trim();
+            }
+
+            function detectType(values) {
+                var numeric = 0;
+                var dateLike = 0;
+                var checked = 0;
+                for (var i = 0; i < Math.min(values.length, 10); i++) {
+                    var v = values[i];
+                    if (v === "") continue;
+                    checked++;
+                    if (/^-?\d+([.,]\d+)?$/.test(v.replace(",", "."))) numeric++;
+                    if (/^\d{4}-\d{2}-\d{2}/.test(v)) dateLike++;
+                }
+                if (checked === 0) return "string";
+                if (dateLike === checked) return "date";
+                if (numeric === checked) return "number";
+                // Mixed numeric/string -> check if majority numeric
+                if (numeric > 0 && numeric >= checked / 2) return "number";
+                return "string";
+            }
+
+            Array.prototype.forEach.call(headers, function (th, idx) {
+                if (th.hasAttribute("data-unsortable")) return;
+                th.addEventListener("click", function () {
+                    var isAsc = th.classList.contains("is-sorted-asc");
+                    var dir = isAsc ? "desc" : "asc";
+
+                    // Clear other headers
+                    Array.prototype.forEach.call(headers, function (h) {
+                        h.classList.remove("is-sorted-asc", "is-sorted-desc");
+                        h.removeAttribute("aria-sort");
+                    });
+                    th.classList.add(dir === "asc" ? "is-sorted-asc" : "is-sorted-desc");
+                    th.setAttribute("aria-sort", dir === "asc" ? "ascending" : "descending");
+
+                    var rows = Array.prototype.slice.call(tbody.rows);
+                    // Detect type from current column values
+                    var vals = rows.map(function (r) { return getCellValue(r, idx); });
+                    var type = detectType(vals);
+
+                    rows.sort(function (a, b) {
+                        var va = getCellValue(a, idx);
+                        var vb = getCellValue(b, idx);
+                        var cmp = 0;
+                        if (type === "number") {
+                            var na = parseFloat(va.replace(",", "."));
+                            var nb = parseFloat(vb.replace(",", "."));
+                            if (isNaN(na)) na = 0;
+                            if (isNaN(nb)) nb = 0;
+                            cmp = na - nb;
+                        } else if (type === "date") {
+                            var da = Date.parse(va);
+                            var db = Date.parse(vb);
+                            if (isNaN(da)) da = 0;
+                            if (isNaN(db)) db = 0;
+                            cmp = da - db;
+                        } else {
+                            cmp = va.localeCompare(vb, "es", { sensitivity: "base", numeric: true });
+                        }
+                        return dir === "asc" ? cmp : -cmp;
+                    });
+
+                    // Re-append in sorted order
+                    rows.forEach(function (row) { tbody.appendChild(row); });
+                });
+            });
+        });
+    }
+
     /* ---------- Flash auto-dismiss ---------- */
     function initFlash() {
         var notif = document.querySelector(".flash .notification");
@@ -165,6 +258,7 @@
         bindThemeToggle();
         initSidebar();
         initTableSearch();
+        initTableSort();
         initSelectAll();
         initConfirmModal();
         initFlash();

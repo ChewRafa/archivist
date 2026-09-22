@@ -59,8 +59,8 @@
 
     {{if .Entries}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable" id="col-table">
-            <thead><tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead>
+        <table class="table is-fullwidth is-striped is-hoverable sortable" id="col-table">
+            <thead><tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th data-unsortable>Acciones</th></tr></thead>
             <tbody>
                 {{range .Entries}}
                 <tr>

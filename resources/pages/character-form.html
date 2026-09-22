@@ -56,13 +56,27 @@
             <div class="field">
                 <label class="label" for="species">Especie</label>
                 <div class="control">
-                    <input class="input" type="text" id="species" name="species" value="{{.Form.Species}}">
+                    <div class="select is-fullwidth">
+                        <select id="species" name="species">
+                            <option value="">— Seleccionar —</option>
+                            {{range .SpeciesList}}
+                            <option value="{{.}}" {{if eq $.Form.Species .}}selected{{end}}>{{.}}</option>
+                            {{end}}
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="field">
                 <label class="label" for="class">Clase</label>
                 <div class="control">
-                    <input class="input" type="text" id="class" name="class" value="{{.Form.Class}}">
+                    <div class="select is-fullwidth">
+                        <select id="class" name="class">
+                            <option value="">— Seleccionar —</option>
+                            {{range .ClassList}}
+                            <option value="{{.}}" {{if eq $.Form.Class .}}selected{{end}}>{{.}}</option>
+                            {{end}}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -71,7 +85,14 @@
             <div class="field">
                 <label class="label" for="guild_name">Gremio</label>
                 <div class="control">
-                    <input class="input" type="text" id="guild_name" name="guild_name" value="{{.Form.GuildName}}">
+                    <div class="select is-fullwidth">
+                        <select id="guild_name" name="guild_name">
+                            <option value="">Sin gremio</option>
+                            {{range .Guilds}}
+                            <option value="{{.Name}}" {{if eq $.Form.GuildName .Name}}selected{{end}}>{{.Name}}</option>
+                            {{end}}
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="field">

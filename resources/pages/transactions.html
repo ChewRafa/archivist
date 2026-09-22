@@ -59,9 +59,9 @@
 
     {{if .Transactions}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable" id="transaction-table">
+        <table class="table is-fullwidth is-striped is-hoverable sortable" id="transaction-table">
             <thead>
-                <tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr>
+                <tr><th>Fecha</th><th>Personaje</th><th>Monto</th><th>Notas</th><th data-unsortable>Acciones</th></tr>
             </thead>
             <tbody>
                 {{range .Transactions}}

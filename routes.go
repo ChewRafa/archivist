@@ -19,32 +19,32 @@ type PageData struct {
 }
 
 var canonicalClasses = map[string]string{
-	"artífice":  "Artífice",
-	"bardo":     "Bardo",
-	"brujo":     "Brujo",
-	"bárbaro":   "Bárbaro",
-	"clérigo":   "Clérigo",
-	"druida":    "Druida",
+	"artífice":   "Artífice",
+	"bardo":      "Bardo",
+	"brujo":      "Brujo",
+	"bárbaro":    "Bárbaro",
+	"clérigo":    "Clérigo",
+	"druida":     "Druida",
 	"explorador": "Explorador",
-	"guerrero":  "Guerrero",
-	"hechicero": "Hechicero",
-	"mago":      "Mago",
-	"monje":     "Monje",
-	"paladín":   "Paladín",
-	"pícaro":    "Pícaro",
+	"guerrero":   "Guerrero",
+	"hechicero":  "Hechicero",
+	"mago":       "Mago",
+	"monje":      "Monje",
+	"paladín":    "Paladín",
+	"pícaro":     "Pícaro",
 	// Feminine variants
-	"artífiza":   "Artífice",
-	"barda":      "Bardo",
-	"bruja":      "Brujo",
-	"bárbara":    "Bárbaro",
-	"clériga":    "Clérigo",
+	"artífiza":    "Artífice",
+	"barda":       "Bardo",
+	"bruja":       "Brujo",
+	"bárbara":     "Bárbaro",
+	"clériga":     "Clérigo",
 	"exploradora": "Explorador",
-	"guerrera":   "Guerrero",
-	"hechicera":  "Hechicero",
-	"maga":       "Mago",
-	"monja":      "Monje",
-	"paladina":   "Paladín",
-	"pícara":     "Pícaro",
+	"guerrera":    "Guerrero",
+	"hechicera":   "Hechicero",
+	"maga":        "Mago",
+	"monja":       "Monje",
+	"paladina":    "Paladín",
+	"pícara":      "Pícaro",
 }
 
 func normalizeClassName(class string) string {
@@ -95,6 +95,59 @@ func normalizeSpeciesName(species string) string {
 		return canonical
 	}
 	return trimmed
+}
+
+func fetchSpeciesOptions(exclude string) []string {
+	var list []string
+	DB.Model(&Character{}).Distinct("species").Where("species != '' AND deleted_at IS NULL").Pluck("species", &list)
+	sort.Strings(list)
+	if exclude != "" {
+		found := false
+		for _, v := range list {
+			if v == exclude {
+				found = true
+				break
+			}
+		}
+		if !found {
+			list = append(list, exclude)
+			sort.Strings(list)
+		}
+	}
+	return list
+}
+
+func fetchClassOptions(exclude string) []string {
+	var list []string
+	DB.Model(&Character{}).Distinct("class").Where("class != '' AND deleted_at IS NULL").Pluck("class", &list)
+	sort.Strings(list)
+	if exclude != "" {
+		found := false
+		for _, v := range list {
+			if v == exclude {
+				found = true
+				break
+			}
+		}
+		if !found {
+			list = append(list, exclude)
+			sort.Strings(list)
+		}
+	}
+	return list
+}
+
+func fetchGuildOptions() []Guild {
+	var guilds []Guild
+	DB.Order("name ASC").Find(&guilds)
+	return guilds
+}
+
+func characterFormExtras(form FormData) (speciesList []string, classList []string, guilds []Guild) {
+	speciesList = fetchSpeciesOptions(form.Species)
+	classList = fetchClassOptions(form.Class)
+	guilds = fetchGuildOptions()
+	return
 }
 
 func IndexHandler(c *gin.Context) {
@@ -193,6 +246,9 @@ func CharactersHandler(c *gin.Context) {
 	}
 
 	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Number != stats[j].Number {
+			return stats[i].Number < stats[j].Number
+		}
 		return stats[i].Name < stats[j].Name
 	})
 
@@ -1290,13 +1346,18 @@ type CostOfLivingFormData struct {
 }
 
 func CharacterNewHandler(c *gin.Context) {
+	form := FormData{Status: "Activo"}
+	speciesList, classList, guilds := characterFormExtras(form)
 	render(c, http.StatusOK, "character-form.html", gin.H{
 		"Title":       "Nuevo Personaje",
 		"ActiveMenu":  "characters",
 		"Action":      "/characters",
 		"SubmitLabel": "Crear Personaje",
-		"Form":        FormData{Status: "Activo"},
+		"Form":        form,
 		"Error":       "",
+		"SpeciesList": speciesList,
+		"ClassList":   classList,
+		"Guilds":      guilds,
 	})
 }
 
@@ -1314,6 +1375,7 @@ func CharacterCreateHandler(c *gin.Context) {
 	}
 
 	if form.Name == "" {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusBadRequest, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
 			"ActiveMenu":  "characters",
@@ -1321,12 +1383,16 @@ func CharacterCreateHandler(c *gin.Context) {
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
 			"Error":       "El nombre es obligatorio",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}
 
 	var existing Character
 	if err := DB.Unscoped().Where("name = ? AND deleted_at IS NULL", form.Name).First(&existing).Error; err == nil {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusConflict, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
 			"ActiveMenu":  "characters",
@@ -1334,6 +1400,9 @@ func CharacterCreateHandler(c *gin.Context) {
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
 			"Error":       "Ya existe un personaje con ese nombre",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}
@@ -1344,6 +1413,7 @@ func CharacterCreateHandler(c *gin.Context) {
 	if trimGuildName != "" {
 		var g Guild
 		if err := DB.Where("name = ?", trimGuildName).First(&g).Error; err != nil {
+			speciesList, classList, guilds := characterFormExtras(form)
 			render(c, http.StatusBadRequest, "character-form.html", gin.H{
 				"Title":       "Nuevo Personaje",
 				"ActiveMenu":  "characters",
@@ -1351,6 +1421,9 @@ func CharacterCreateHandler(c *gin.Context) {
 				"SubmitLabel": "Crear Personaje",
 				"Form":        form,
 				"Error":       "Gremio no existe: " + trimGuildName,
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
 			})
 			return
 		}
@@ -1364,6 +1437,7 @@ func CharacterCreateHandler(c *gin.Context) {
 			} else if errors.Is(err, ErrCrossGuild) {
 				msg = "El jugador ya tiene personajes activos en otro gremio"
 			}
+			speciesList, classList, guilds := characterFormExtras(form)
 			render(c, http.StatusBadRequest, "character-form.html", gin.H{
 				"Title":       "Nuevo Personaje",
 				"ActiveMenu":  "characters",
@@ -1371,6 +1445,9 @@ func CharacterCreateHandler(c *gin.Context) {
 				"SubmitLabel": "Crear Personaje",
 				"Form":        form,
 				"Error":       msg,
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
 			})
 			return
 		}
@@ -1402,6 +1479,7 @@ func CharacterCreateHandler(c *gin.Context) {
 		}
 		return nil
 	}); err != nil {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusInternalServerError, "character-form.html", gin.H{
 			"Title":       "Nuevo Personaje",
 			"ActiveMenu":  "characters",
@@ -1409,6 +1487,9 @@ func CharacterCreateHandler(c *gin.Context) {
 			"SubmitLabel": "Crear Personaje",
 			"Form":        form,
 			"Error":       "Error al crear el personaje",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}
@@ -1425,23 +1506,28 @@ func CharacterEditHandler(c *gin.Context) {
 		return
 	}
 
+	form := FormData{
+		Number:    character.Number,
+		Player:    character.Player,
+		Name:      character.Name,
+		Status:    character.Status,
+		Species:   character.Species,
+		Class:     character.Class,
+		GuildName: character.GuildName,
+		GuildRole: character.GuildRole,
+		Mount:     character.Mount,
+	}
+	speciesList, classList, guilds := characterFormExtras(form)
 	render(c, http.StatusOK, "character-form.html", gin.H{
 		"Title":       "Editar Personaje",
 		"ActiveMenu":  "characters",
 		"Action":      "/characters/detail/" + id,
 		"SubmitLabel": "Actualizar Personaje",
-		"Form": FormData{
-			Number:    character.Number,
-			Player:    character.Player,
-			Name:      character.Name,
-			Status:    character.Status,
-			Species:   character.Species,
-			Class:     character.Class,
-			GuildName: character.GuildName,
-			GuildRole: character.GuildRole,
-			Mount:     character.Mount,
-		},
-		"Error": "",
+		"Form":        form,
+		"Error":       "",
+		"SpeciesList": speciesList,
+		"ClassList":   classList,
+		"Guilds":      guilds,
 	})
 }
 
@@ -1461,6 +1547,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 	}
 
 	if form.Name == "" {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusBadRequest, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
 			"ActiveMenu":  "characters",
@@ -1468,12 +1555,16 @@ func CharacterUpdateHandler(c *gin.Context) {
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
 			"Error":       "El nombre es obligatorio",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}
 
 	var existing Character
 	if err := DB.Unscoped().Where("name = ? AND deleted_at IS NULL AND id != ?", form.Name, id).First(&existing).Error; err == nil {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusConflict, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
 			"ActiveMenu":  "characters",
@@ -1481,6 +1572,9 @@ func CharacterUpdateHandler(c *gin.Context) {
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
 			"Error":       "Ya existe un personaje con ese nombre",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}
@@ -1497,6 +1591,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 	if trimGuildName != "" {
 		var g Guild
 		if err := DB.Where("name = ?", trimGuildName).First(&g).Error; err != nil {
+			speciesList, classList, guilds := characterFormExtras(form)
 			render(c, http.StatusBadRequest, "character-form.html", gin.H{
 				"Title":       "Editar Personaje",
 				"ActiveMenu":  "characters",
@@ -1504,6 +1599,9 @@ func CharacterUpdateHandler(c *gin.Context) {
 				"SubmitLabel": "Actualizar Personaje",
 				"Form":        form,
 				"Error":       "Gremio no existe: " + trimGuildName,
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
 			})
 			return
 		}
@@ -1517,6 +1615,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 			} else if errors.Is(err, ErrCrossGuild) {
 				msg = "El jugador ya tiene personajes activos en otro gremio"
 			}
+			speciesList, classList, guilds := characterFormExtras(form)
 			render(c, http.StatusBadRequest, "character-form.html", gin.H{
 				"Title":       "Editar Personaje",
 				"ActiveMenu":  "characters",
@@ -1524,6 +1623,9 @@ func CharacterUpdateHandler(c *gin.Context) {
 				"SubmitLabel": "Actualizar Personaje",
 				"Form":        form,
 				"Error":       msg,
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
 			})
 			return
 		}
@@ -1560,6 +1662,7 @@ func CharacterUpdateHandler(c *gin.Context) {
 		}
 		return nil
 	}); err != nil {
+		speciesList, classList, guilds := characterFormExtras(form)
 		render(c, http.StatusInternalServerError, "character-form.html", gin.H{
 			"Title":       "Editar Personaje",
 			"ActiveMenu":  "characters",
@@ -1567,6 +1670,9 @@ func CharacterUpdateHandler(c *gin.Context) {
 			"SubmitLabel": "Actualizar Personaje",
 			"Form":        form,
 			"Error":       "Error al actualizar el personaje",
+			"SpeciesList": speciesList,
+			"ClassList":   classList,
+			"Guilds":      guilds,
 		})
 		return
 	}

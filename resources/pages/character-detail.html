@@ -91,7 +91,7 @@
 <div class="box">
     <p class="title is-5">Registro de Personaje</p>
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead><tr><th>Fecha</th><th>Evento</th><th>XP</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
             <tbody>
                 {{range .Registries}}
@@ -114,7 +114,7 @@
 <div class="box">
     <p class="title is-5">Misiones</p>
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead><tr><th>Fecha</th><th>Misión</th><th>XP Misión</th><th>XP Reporte</th><th>XP Gremio</th><th>Oro</th><th>Renombre</th><th>Notas</th></tr></thead>
             <tbody>
                 {{range .MissionEntries}}
@@ -139,7 +139,7 @@
 <div class="box">
     <p class="title is-5">Uso de Días Libres</p>
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead><tr><th>Fecha</th><th>DL Usados</th><th>Oro</th><th>Descripción</th></tr></thead>
             <tbody>
                 {{range .DLUsages}}
@@ -160,7 +160,7 @@
 <div class="box">
     <p class="title is-5">Transacciones</p>
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
             <tbody>
                 {{range .Transactions}}
@@ -180,7 +180,7 @@
 <div class="box">
     <p class="title is-5">Costo de Vida</p>
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable">
+        <table class="table is-fullwidth is-striped is-hoverable sortable">
             <thead><tr><th>Fecha</th><th>Monto</th><th>Notas</th></tr></thead>
             <tbody>
                 {{range .CostOfLivings}}

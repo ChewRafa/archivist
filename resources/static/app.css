@@ -239,6 +239,33 @@ body {
     margin-right: 0.25rem;
 }
 
+/* ---------- Sortable tables ---------- */
+table.sortable th {
+    cursor: pointer;
+    user-select: none;
+}
+
+table.sortable th[data-unsortable] {
+    cursor: default;
+}
+
+table.sortable th:not([data-unsortable])::after {
+    content: "↕";
+    margin-left: 0.35rem;
+    opacity: 0.35;
+    font-size: 0.7rem;
+}
+
+table.sortable th.is-sorted-asc:not([data-unsortable])::after {
+    content: "↑";
+    opacity: 1;
+}
+
+table.sortable th.is-sorted-desc:not([data-unsortable])::after {
+    content: "↓";
+    opacity: 1;
+}
+
 /* ============================================================
    Empty states
    ============================================================ */
@@ -363,6 +390,22 @@ a.stat-card:hover {
 .gold-value {
     color: var(--bulma-warning-strong);
     font-weight: 600;
+}
+
+.gold-warning {
+    background: #ffe0b2 !important;
+}
+
+.gold-critical {
+    background: #ffcdd2 !important;
+}
+
+[data-theme="dark"] .gold-warning {
+    background: rgba(230, 81, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .gold-critical {
+    background: rgba(183, 28, 28, 0.4) !important;
 }
 
 .xp-total {

@@ -23,10 +23,10 @@
 <div class="box">
     {{if .Stats}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable character-table" id="character-table">
+        <table class="table is-fullwidth is-striped is-hoverable character-table sortable" id="character-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th class="is-sorted-asc" aria-sort="ascending">#</th>
                     <th>Personaje</th>
                     <th>Jugador</th>
                     <th>Estado</th>
@@ -51,7 +51,7 @@
                     <td>{{.GuildName}}</td>
                     <td><span class="level-badge">{{.Level}}</span></td>
                     <td>{{printf "%.0f" .XP}}</td>
-                    <td class="gold-value">{{printf "%.1f" .GoldBalance}}</td>
+                    <td class="gold-value {{if and (eq .Status "Activo") (lt .GoldBalance 50.0)}}gold-critical{{else if and (eq .Status "Activo") (lt .GoldBalance 300.0)}}gold-warning{{end}}">{{printf "%.1f" .GoldBalance}}</td>
                     <td>{{printf "%.0f" .Renown}}</td>
                 </tr>
                 {{end}}

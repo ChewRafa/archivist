@@ -65,8 +65,8 @@
 
     {{if .Usages}}
     <div class="table-scroll">
-        <table class="table is-fullwidth is-striped is-hoverable" id="dl-table">
-            <thead><tr><th>Fecha</th><th>Personaje</th><th>DL Usados</th><th>Oro</th><th>Descripción</th><th>Acciones</th></tr></thead>
+        <table class="table is-fullwidth is-striped is-hoverable sortable" id="dl-table">
+            <thead><tr><th>Fecha</th><th>Personaje</th><th>DL Usados</th><th>Oro</th><th>Descripción</th><th data-unsortable>Acciones</th></tr></thead>
             <tbody>
                 {{range .Usages}}
                 <tr>
