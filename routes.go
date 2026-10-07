@@ -2036,7 +2036,7 @@ func SetupRoutes(r *gin.Engine) {
 	r.LoadHTMLFiles("resources/login.html")
 
 	r.GET("/login", LoginPageHandler)
-	r.POST("/login", LoginPostHandler)
+	r.POST("/login", RateLimitLogin(), LoginPostHandler)
 
 	auth := r.Group("/")
 	auth.Use(AuthRequired(), CSRFRequired())
