@@ -162,6 +162,11 @@ func RefreshCharacterStatsView(tx *gorm.DB) error {
 
 func GetAllCharactersWithStats() ([]CharacterStats, error) {
 	var stats []CharacterStats
-	err := DB.Table("character_stats").Scan(&stats).Error
-	return stats, err
+	if err := DB.Table("character_stats").Scan(&stats).Error; err != nil {
+		return nil, err
+	}
+	for i := range stats {
+		stats[i].Level = CalculateLevel(stats[i].XP)
+	}
+	return stats, nil
 }
