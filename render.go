@@ -40,6 +40,9 @@ func loadTemplates() {
 		"mul":        func(a, b int) int { return a * b },
 		"add3":       func(a, b, c float64) float64 { return a + b + c },
 		"formatDate": formatDate,
+		"seq":        func(start, end int) []int { r := make([]int, end-start+1); for i := range r { r[i] = start + i }; return r },
+		"add":        func(a, b int) int { return a + b },
+		"sub":        func(a, b int) int { return a - b },
 	}
 
 	base := template.Must(template.New("base.html").Funcs(funcMap).ParseFiles("resources/base.html"))
