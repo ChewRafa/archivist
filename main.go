@@ -40,19 +40,7 @@ func main() {
 	}
 	Init(dbPath)
 
-	if adminUser := os.Getenv("ADMIN_USERNAME"); adminUser != "" {
-		if adminPass := os.Getenv("ADMIN_PASSWORD"); adminPass != "" {
-			var count int64
-			DB.Model(&User{}).Count(&count)
-			if count == 0 {
-				if err := CreateUser(adminUser, adminPass); err != nil {
-					log.Printf("Failed to create admin user '%s': %s", adminUser, err)
-				} else {
-					log.Printf("Admin user '%s' created from environment variables", adminUser)
-				}
-			}
-		}
-	}
+	EnsureAdminFromEnv()
 
 	if *createAdmin != "" {
 		fmt.Print("Password: ")
