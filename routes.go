@@ -2096,6 +2096,8 @@ func SetupRoutes(r *gin.Engine) {
 		}
 		auth.GET("/import", ImportPageHandler)
 		auth.POST("/import", ImportPostHandler)
+		auth.GET("/export", ExportPageHandler)
+		auth.POST("/export/download", ExportDownloadHandler)
 		auth.GET("/guilds", GuildsHandler)
 		auth.GET("/guilds/create", GuildNewHandler)
 		auth.POST("/guilds", GuildCreateHandler)

@@ -1,0 +1,110 @@
+{{define "content"}}
+<div class="page-header">
+    <div class="page-header-main">
+        <h1>Exportar Datos</h1>
+        <p class="subtitle is-6">Descarga todos los datos de la base de datos en un único archivo JSON</p>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="notification is-danger is-light import-alert">
+    <button class="delete" aria-label="Cerrar" onclick="this.parentElement.remove()"></button>
+    <p class="has-text-weight-semibold mb-1">No se pudo exportar</p>
+    <p>{{.Error}}</p>
+</div>
+{{end}}
+
+{{if .Counts}}
+{{$c := .Counts}}
+<div class="box">
+    <div class="import-results-head">
+        <div>
+            <p class="title is-5 mb-1">Registros a exportar</p>
+            <p class="subtitle is-6 has-text-grey mb-0">Incluye registros eliminados (soft-delete)</p>
+        </div>
+    </div>
+
+    <div class="columns is-multiline mt-3">
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Personajes</p>
+                <p class="import-stat-value">{{$c.Characters}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Usos de DL</p>
+                <p class="import-stat-value">{{$c.DLUsages}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Transacciones</p>
+                <p class="import-stat-value">{{$c.Transactions}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Costos de Vida</p>
+                <p class="import-stat-value">{{$c.CostOfLivings}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Registros de Personajes</p>
+                <p class="import-stat-value">{{$c.Registries}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Misiones</p>
+                <p class="import-stat-value">{{$c.Missions}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Entradas de Misión</p>
+                <p class="import-stat-value">{{$c.MissionEntries}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Gremios</p>
+                <p class="import-stat-value">{{$c.Guilds}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Economía de Gremios</p>
+                <p class="import-stat-value">{{$c.GuildTransactions}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Miembros de Gremio</p>
+                <p class="import-stat-value">{{$c.GuildMembers}}</p>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Estadísticas de Personajes</p>
+                <p class="import-stat-value">{{$c.CharacterStats}}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="import-actions mt-4">
+        <form method="POST" action="/export/download" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <button type="submit" class="button is-primary is-medium">
+                <span class="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </span>
+                <span>Descargar JSON</span>
+            </button>
+        </form>
+        <p class="help mt-2">El archivo se descargará con formato JSON legible (pretty-printed).</p>
+    </div>
+</div>
+{{end}}
+{{end}}
