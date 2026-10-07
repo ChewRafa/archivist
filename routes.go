@@ -364,7 +364,12 @@ func DLUsageCreateHandler(c *gin.Context) {
 		Description: form.Description,
 	}
 
-	DB.Create(&usage)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&usage).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Uso de DL registrado correctamente.")
 	c.Redirect(http.StatusFound, "/dl")
 }
@@ -450,7 +455,12 @@ func DLUsageUpdateHandler(c *gin.Context) {
 	usage.GoldChange = form.GoldChange
 	usage.Description = form.Description
 
-	if err := DB.Save(&usage).Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&usage).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	}); err != nil {
 		var characters []Character
 		DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "dl-usage-form.html", gin.H{
@@ -471,7 +481,12 @@ func DLUsageUpdateHandler(c *gin.Context) {
 
 func DLUsageDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
-	DB.Delete(&DLUsage{}, id)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&DLUsage{}, id).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Uso de DL eliminado.")
 	c.Redirect(http.StatusFound, "/dl")
 }
@@ -508,14 +523,19 @@ func TransactionCreateHandler(c *gin.Context) {
 		return
 	}
 
-	tx := Transaction{
+	t := Transaction{
 		Date:        parsed,
 		CharacterID: characterID,
 		Amount:      amount,
 		Notes:       notes,
 	}
 
-	DB.Create(&tx)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&t).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Transacción añadida correctamente.")
 	c.Redirect(http.StatusFound, "/transactions")
 }
@@ -598,7 +618,12 @@ func TransactionUpdateHandler(c *gin.Context) {
 	tx.Amount = form.Amount
 	tx.Notes = form.Notes
 
-	if err := DB.Save(&tx).Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&tx).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	}); err != nil {
 		var characters []Character
 		DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "transaction-form.html", gin.H{
@@ -619,7 +644,12 @@ func TransactionUpdateHandler(c *gin.Context) {
 
 func TransactionDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
-	DB.Delete(&Transaction{}, id)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&Transaction{}, id).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Transacción eliminada.")
 	c.Redirect(http.StatusFound, "/transactions")
 }
@@ -1261,7 +1291,12 @@ func MissionEntryCreateHandler(c *gin.Context) {
 		Notes:       c.PostForm("notes"),
 	}
 
-	DB.Create(&entry)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&entry).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Personaje añadido a la misión.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
@@ -1313,7 +1348,12 @@ func MissionEntryUpdateHandler(c *gin.Context) {
 	entry.Renown = formFloat(c.PostForm("renown"))
 	entry.Notes = c.PostForm("notes")
 
-	DB.Save(&entry)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&entry).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Entrada actualizada correctamente.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
@@ -1321,7 +1361,12 @@ func MissionEntryUpdateHandler(c *gin.Context) {
 func MissionEntryDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
 	eid := c.Param("eid")
-	DB.Delete(&MissionEntry{}, eid)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&MissionEntry{}, eid).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Entrada eliminada.")
 	c.Redirect(http.StatusFound, "/missions/detail/"+id)
 }
@@ -1407,6 +1452,24 @@ func CharacterCreateHandler(c *gin.Context) {
 		return
 	}
 
+	if form.Number != 0 {
+		if err := DB.Unscoped().Where("number = ? AND deleted_at IS NULL", form.Number).First(&existing).Error; err == nil {
+			speciesList, classList, guilds := characterFormExtras(form)
+			render(c, http.StatusConflict, "character-form.html", gin.H{
+				"Title":       "Nuevo Personaje",
+				"ActiveMenu":  "characters",
+				"Action":      "/characters",
+				"SubmitLabel": "Crear Personaje",
+				"Form":        form,
+				"Error":       "El número ya está en uso",
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
+			})
+			return
+		}
+	}
+
 	// Resolve target guild for join-table truth (guild_members)
 	trimGuildName := strings.TrimSpace(form.GuildName)
 	var targetGuild *Guild
@@ -1476,6 +1539,9 @@ func CharacterCreateHandler(c *gin.Context) {
 			if err := SyncCharacterGuildName(tx, character.ID); err != nil {
 				return err
 			}
+		}
+		if err := RefreshCharacterStatsView(tx); err != nil {
+			return err
 		}
 		return nil
 	}); err != nil {
@@ -1579,6 +1645,24 @@ func CharacterUpdateHandler(c *gin.Context) {
 		return
 	}
 
+	if form.Number != 0 {
+		if err := DB.Unscoped().Where("number = ? AND deleted_at IS NULL AND id != ?", form.Number, id).First(&existing).Error; err == nil {
+			speciesList, classList, guilds := characterFormExtras(form)
+			render(c, http.StatusConflict, "character-form.html", gin.H{
+				"Title":       "Editar Personaje",
+				"ActiveMenu":  "characters",
+				"Action":      "/characters/detail/" + id,
+				"SubmitLabel": "Actualizar Personaje",
+				"Form":        form,
+				"Error":       "El número ya está en uso",
+				"SpeciesList": speciesList,
+				"ClassList":   classList,
+				"Guilds":      guilds,
+			})
+			return
+		}
+	}
+
 	var character Character
 	if err := DB.Unscoped().First(&character, id).Error; err != nil {
 		c.Redirect(http.StatusFound, "/characters")
@@ -1660,6 +1744,9 @@ func CharacterUpdateHandler(c *gin.Context) {
 		if err := SyncCharacterGuildName(tx, character.ID); err != nil {
 			return err
 		}
+		if err := RefreshCharacterStatsView(tx); err != nil {
+			return err
+		}
 		return nil
 	}); err != nil {
 		speciesList, classList, guilds := characterFormExtras(form)
@@ -1686,7 +1773,10 @@ func CharacterDeleteHandler(c *gin.Context) {
 	cid := parseUint(id)
 	DB.Transaction(func(tx *gorm.DB) error {
 		tx.Exec("DELETE FROM guild_members WHERE character_id = ?", cid)
-		return tx.Delete(&Character{}, cid).Error
+		if err := tx.Delete(&Character{}, cid).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
 	})
 	setFlash(c, "success", "Personaje eliminado.")
 	c.Redirect(http.StatusFound, "/characters")
@@ -1733,7 +1823,12 @@ func CostOfLivingCreateHandler(c *gin.Context) {
 		Notes:       form.Notes,
 	}
 
-	DB.Create(&entry)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&entry).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Costo de vida registrado.")
 	c.Redirect(http.StatusFound, "/cost-of-living")
 }
@@ -1816,7 +1911,12 @@ func CostOfLivingUpdateHandler(c *gin.Context) {
 	entry.Amount = form.Amount
 	entry.Notes = form.Notes
 
-	if err := DB.Save(&entry).Error; err != nil {
+	if err := DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&entry).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	}); err != nil {
 		var characters []Character
 		DB.Order("name ASC").Find(&characters)
 		render(c, http.StatusInternalServerError, "cost-of-living-form.html", gin.H{
@@ -1837,7 +1937,12 @@ func CostOfLivingUpdateHandler(c *gin.Context) {
 
 func CostOfLivingDeleteHandler(c *gin.Context) {
 	id := c.Param("id")
-	DB.Delete(&CostOfLiving{}, id)
+	DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&CostOfLiving{}, id).Error; err != nil {
+			return err
+		}
+		return RefreshCharacterStatsView(tx)
+	})
 	setFlash(c, "success", "Registro de costo de vida eliminado.")
 	c.Redirect(http.StatusFound, "/cost-of-living")
 }

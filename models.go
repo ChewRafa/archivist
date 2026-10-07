@@ -8,7 +8,7 @@ import (
 
 type Character struct {
 	ID        uint       `gorm:"primaryKey" json:"id"`
-	Number    int        `json:"number"`
+	Number    int        `gorm:"uniqueIndex" json:"number"`
 	Player    string     `gorm:"size:255" json:"player"`
 	Name      string     `gorm:"size:255;uniqueIndex" json:"name"`
 	Status    string     `gorm:"size:50;default:'Activo'" json:"status"`
