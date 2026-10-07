@@ -1,5 +1,9 @@
 package main
 
+import (
+	"gorm.io/gorm"
+)
+
 var XPThresholds = []float64{
 	0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
 	85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000,
@@ -119,22 +123,45 @@ func GetCharacterWithStats(id uint) (*CharacterStats, error) {
 	}, nil
 }
 
-func GetAllCharactersWithStats() ([]CharacterStats, error) {
-	var characters []Character
-	DB.Find(&characters)
-
-	var stats []CharacterStats
-	for _, c := range characters {
-		xp := GetXPTotal(c.ID)
-
-		stats = append(stats, CharacterStats{
-			Character:   c,
-			XP:          xp,
-			Level:       CalculateLevel(xp),
-			GoldBalance: GetGoldBalance(c.ID),
-			Renown:      GetRenownTotal(c.ID),
-		})
+// RefreshCharacterStatsView drops and recreates the character_stats view.
+// Call this after any write operation that affects character stats.
+func RefreshCharacterStatsView(tx *gorm.DB) error {
+	if err := tx.Exec("DROP VIEW IF EXISTS character_stats").Error; err != nil {
+		return err
 	}
+	viewSQL := `
+		CREATE VIEW character_stats AS
+		SELECT
+			c.id,
+			c.number,
+			c.player,
+			c.name,
+			c.status,
+			c.species,
+			c.class,
+			c.guild_name,
+			c.guild_role,
+			c.mount,
+			c.created_at,
+			c.updated_at,
+			c.deleted_at,
+			COALESCE((SELECT SUM(experience) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(xp_mission + xp_report + xp_guild) FROM mission_entries WHERE character_id = c.id), 0) AS xp,
+			COALESCE((SELECT SUM(gold) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(gold) FROM mission_entries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(gold_change) FROM dl_usages WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(amount) FROM transactions WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(amount) FROM cost_of_livings WHERE character_id = c.id), 0) AS gold_balance,
+			COALESCE((SELECT SUM(renown) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(renown) FROM mission_entries WHERE character_id = c.id), 0) AS renown
+		FROM characters c
+		WHERE c.deleted_at IS NULL
+	`
+	return tx.Exec(viewSQL).Error
+}
 
-	return stats, nil
+func GetAllCharactersWithStats() ([]CharacterStats, error) {
+	var stats []CharacterStats
+	err := DB.Table("character_stats").Scan(&stats).Error
+	return stats, err
 }

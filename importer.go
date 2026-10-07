@@ -219,6 +219,9 @@ func ImportExcel(f *excelize.File, opts ...ImportOptions) ImportResult {
 		if shouldImportSheet(opt, "guildeconomy") {
 			importGuildEconomy(tx, f, &result)
 		}
+		if err := RefreshCharacterStatsView(tx); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {

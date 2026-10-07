@@ -84,6 +84,11 @@ func Init(dbPath string) {
 		}
 	}
 
+	// Create or replace character_stats view
+	if err := createCharacterStatsView(); err != nil {
+		log.Printf("Warning: failed to create character_stats view: %v", err)
+	}
+
 	log.Println("Database initialized successfully")
 }
 
@@ -137,4 +142,36 @@ func deduplicateTable(table string, columns []string) {
 	if res.RowsAffected > 0 {
 		log.Printf("Removed %d duplicate row(s) from %s", res.RowsAffected, table)
 	}
+}
+
+func createCharacterStatsView() error {
+	viewSQL := `
+		CREATE VIEW IF NOT EXISTS character_stats AS
+		SELECT
+			c.id,
+			c.number,
+			c.player,
+			c.name,
+			c.status,
+			c.species,
+			c.class,
+			c.guild_name,
+			c.guild_role,
+			c.mount,
+			c.created_at,
+			c.updated_at,
+			c.deleted_at,
+			COALESCE((SELECT SUM(experience) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(xp_mission + xp_report + xp_guild) FROM mission_entries WHERE character_id = c.id), 0) AS xp,
+			COALESCE((SELECT SUM(gold) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(gold) FROM mission_entries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(gold_change) FROM dl_usages WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(amount) FROM transactions WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(amount) FROM cost_of_livings WHERE character_id = c.id), 0) AS gold_balance,
+			COALESCE((SELECT SUM(renown) FROM character_registries WHERE character_id = c.id), 0) +
+			COALESCE((SELECT SUM(renown) FROM mission_entries WHERE character_id = c.id), 0) AS renown
+		FROM characters c
+		WHERE c.deleted_at IS NULL
+	`
+	return DB.Exec(viewSQL).Error
 }
