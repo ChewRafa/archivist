@@ -77,12 +77,25 @@
 
     /* ---------- Select all / none for checkboxes ---------- */
     function initSelectAll() {
-        var toggle = document.querySelector("[data-check-all]");
-        if (!toggle) return;
-        var group = document.querySelectorAll(toggle.getAttribute("data-check-all"));
-        toggle.addEventListener("change", function () {
-            Array.prototype.forEach.call(group, function (cb) {
-                cb.checked = toggle.checked;
+        var toggles = document.querySelectorAll("[data-check-all]");
+        Array.prototype.forEach.call(toggles, function (toggle) {
+            var selector = toggle.getAttribute("data-check-all");
+            if (!selector) return;
+            function resolveTargets() {
+                var found = document.querySelectorAll(selector);
+                // Allow pointing at a container (e.g. "#group") instead of the inputs.
+                if (found.length === 1 && found[0].querySelectorAll) {
+                    var inner = found[0].querySelectorAll('input[type="checkbox"]');
+                    if (inner.length > 0) return inner;
+                }
+                return found;
+            }
+            toggle.addEventListener("change", function () {
+                var group = resolveTargets();
+                Array.prototype.forEach.call(group, function (cb) {
+                    if (cb !== toggle) cb.checked = toggle.checked;
+                    cb.dispatchEvent(new Event("change", { bubbles: true }));
+                });
             });
         });
     }
@@ -252,6 +265,146 @@
         }, 6000);
     }
 
+    /* ---------- Import page: dropzone + preview + spinner ---------- */
+    function initImportForm() {
+        var form = document.getElementById("import-form");
+        if (!form) return;
+        var dropzone = document.getElementById("import-dropzone");
+        var input = document.getElementById("import-file");
+        var preview = document.getElementById("import-file-preview");
+        var fileName = document.getElementById("import-file-name");
+        var fileSize = document.getElementById("import-file-size");
+        var clearBtn = document.getElementById("import-file-clear");
+        var errorMsg = document.getElementById("import-file-error");
+        var submitBtn = document.getElementById("import-submit");
+        var resetBtn = document.getElementById("import-reset");
+        var countTag = document.getElementById("import-sheets-count");
+        if (!dropzone || !input) return;
+
+        function formatSize(bytes) {
+            if (!bytes && bytes !== 0) return "";
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }
+
+        function isValidXlsx(file) {
+            if (!file) return false;
+            var name = (file.name || "").toLowerCase();
+            if (name.endsWith(".xlsx")) return true;
+            var type = file.type || "";
+            return type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        }
+
+        function updateSheetsCount() {
+            if (!countTag) return;
+            var boxes = document.querySelectorAll('#import-sheets-checkboxes input[type="checkbox"]');
+            var total = boxes.length;
+            var checked = 0;
+            Array.prototype.forEach.call(boxes, function (cb) {
+                if (cb.checked) checked++;
+            });
+            countTag.textContent = checked + " de " + total;
+        }
+
+        function showPreview(file) {
+            if (!file || !preview) return;
+            if (fileName) fileName.textContent = file.name;
+            if (fileName) fileName.title = file.name;
+            if (fileSize) fileSize.textContent = formatSize(file.size);
+            preview.hidden = false;
+            dropzone.classList.add("has-file");
+            if (errorMsg) errorMsg.hidden = true;
+        }
+
+        function clearFile() {
+            input.value = "";
+            if (preview) preview.hidden = true;
+            dropzone.classList.remove("has-file");
+            if (errorMsg) errorMsg.hidden = true;
+        }
+
+        function setFile(file) {
+            if (!file) return;
+            if (!isValidXlsx(file)) {
+                if (errorMsg) errorMsg.hidden = false;
+                return;
+            }
+            showPreview(file);
+        }
+
+        input.addEventListener("change", function () {
+            if (input.files && input.files.length > 0) {
+                setFile(input.files[0]);
+                // If invalid, reset so `required` keeps working.
+                if (errorMsg && !errorMsg.hidden) input.value = "";
+            }
+        });
+
+        ["dragenter", "dragover"].forEach(function (evt) {
+            dropzone.addEventListener(evt, function (e) {
+                e.preventDefault();
+                dropzone.classList.add("is-dragover");
+            });
+        });
+        ["dragleave", "drop"].forEach(function (evt) {
+            dropzone.addEventListener(evt, function (e) {
+                e.preventDefault();
+                dropzone.classList.remove("is-dragover");
+            });
+        });
+        dropzone.addEventListener("drop", function (e) {
+            var files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length > 0) {
+                try {
+                    input.files = files;
+                } catch (err) {
+                    // Some browsers disallow direct assignment; fall back to preview only.
+                }
+                setFile(files[0]);
+                if (errorMsg && !errorMsg.hidden) input.value = "";
+            }
+        });
+        dropzone.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                input.click();
+            }
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearFile();
+            });
+        }
+
+        var sheets = document.querySelectorAll('#import-sheets-checkboxes input[type="checkbox"]');
+        Array.prototype.forEach.call(sheets, function (cb) {
+            cb.addEventListener("change", updateSheetsCount);
+        });
+        updateSheetsCount();
+
+        form.addEventListener("reset", function () {
+            setTimeout(function () {
+                clearFile();
+                updateSheetsCount();
+                if (submitBtn) {
+                    submitBtn.classList.remove("is-loading");
+                    submitBtn.disabled = false;
+                }
+            }, 0);
+        });
+
+        form.addEventListener("submit", function () {
+            if (submitBtn) {
+                submitBtn.classList.add("is-loading");
+                submitBtn.disabled = true;
+            }
+        });
+    }
+
     /* ---------- Boot ---------- */
     document.addEventListener("DOMContentLoaded", function () {
         initTheme();
@@ -262,5 +415,6 @@
         initSelectAll();
         initConfirmModal();
         initFlash();
+        initImportForm();
     });
 })();

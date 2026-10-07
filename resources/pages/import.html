@@ -7,84 +7,203 @@
 </div>
 
 {{if .Error}}
-<div class="notification is-danger">
-    <strong>Error:</strong> {{.Error}}
+<div class="notification is-danger is-light import-alert">
+    <button class="delete" aria-label="Cerrar" onclick="this.parentElement.remove()"></button>
+    <p class="has-text-weight-semibold mb-1">No se pudo importar el archivo</p>
+    <p>{{.Error}}</p>
 </div>
 {{end}}
 
 {{if .Result}}
-<div class="notification {{if .Result.Errors}}is-warning{{else}}is-success{{end}}">
-    <strong>Resultado de la importación:</strong>
-    <ul class="mt-2">
-        <li>Personajes: {{.Result.Characters}} creados, {{.Result.CharactersSkipped}} omitidos</li>
-        <li>Usos de DL: {{.Result.DLUsages}} creados, {{.Result.DLUsagesSkipped}} omitidos</li>
-        <li>Transacciones: {{.Result.Transactions}} creadas, {{.Result.TransactionsSkipped}} omitidas</li>
-        <li>Costos de Vida: {{.Result.CostOfLivings}} creados, {{.Result.CostOfLivingsSkipped}} omitidos</li>
-        <li>Registros de Personajes: {{.Result.Registries}} creados, {{.Result.RegistriesSkipped}} omitidos</li>
-        <li>Misiones: {{.Result.Missions}} creadas, {{.Result.MissionsSkipped}} omitidas</li>
-        <li>Entradas de Misión: {{.Result.MissionEntries}} creadas, {{.Result.MissionEntriesSkipped}} omitidas</li>
-        <li>Gremios: {{.Result.Guilds}} creados, {{.Result.GuildsSkipped}} omitidos</li>
-        <li>Economía de Gremios: {{.Result.GuildTransactions}} creadas, {{.Result.GuildTransactionsSkipped}} omitidas</li>
-    </ul>
-    {{if .Result.Errors}}
-    <hr>
-    <strong>Errores:</strong>
-    <ul>
-        {{range .Result.Errors}}
-        <li>{{.}}</li>
-        {{end}}
-    </ul>
+{{$r := .Result}}
+<div class="box import-results">
+    <div class="import-results-head">
+        <div>
+            <p class="title is-5 mb-1">Resultado de la importación</p>
+            <p class="subtitle is-6 has-text-grey mb-0">
+                {{if $r.Errors}}Completada con advertencias — revisa los errores{{else}}Importación completada correctamente{{end}}
+            </p>
+        </div>
+        <span class="tag is-medium {{if $r.Errors}}is-warning{{else}}is-success{{end}}">
+            {{if $r.Errors}}{{len $r.Errors}} {{if eq (len $r.Errors) 1}}error{{else}}errores{{end}}{{else}}Sin errores{{end}}
+        </span>
+    </div>
+
+    <div class="columns is-multiline mt-3">
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Personajes</p>
+                <p class="import-stat-value">{{$r.Characters}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.Characters}} creados</span>
+                    <span class="tag {{if gt $r.CharactersSkipped 0}}is-warning is-light{{end}}">{{$r.CharactersSkipped}} omitidos</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Usos de DL</p>
+                <p class="import-stat-value">{{$r.DLUsages}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.DLUsages}} creados</span>
+                    <span class="tag {{if gt $r.DLUsagesSkipped 0}}is-warning is-light{{end}}">{{$r.DLUsagesSkipped}} omitidos</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Transacciones</p>
+                <p class="import-stat-value">{{$r.Transactions}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.Transactions}} creadas</span>
+                    <span class="tag {{if gt $r.TransactionsSkipped 0}}is-warning is-light{{end}}">{{$r.TransactionsSkipped}} omitidas</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Costos de Vida</p>
+                <p class="import-stat-value">{{$r.CostOfLivings}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.CostOfLivings}} creados</span>
+                    <span class="tag {{if gt $r.CostOfLivingsSkipped 0}}is-warning is-light{{end}}">{{$r.CostOfLivingsSkipped}} omitidos</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Registros de Personajes</p>
+                <p class="import-stat-value">{{$r.Registries}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.Registries}} creados</span>
+                    <span class="tag {{if gt $r.RegistriesSkipped 0}}is-warning is-light{{end}}">{{$r.RegistriesSkipped}} omitidos</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Misiones</p>
+                <p class="import-stat-value">{{$r.Missions}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.Missions}} creadas</span>
+                    <span class="tag {{if gt $r.MissionsSkipped 0}}is-warning is-light{{end}}">{{$r.MissionsSkipped}} omitidas</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Entradas de Misión</p>
+                <p class="import-stat-value">{{$r.MissionEntries}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.MissionEntries}} creadas</span>
+                    <span class="tag {{if gt $r.MissionEntriesSkipped 0}}is-warning is-light{{end}}">{{$r.MissionEntriesSkipped}} omitidas</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Gremios</p>
+                <p class="import-stat-value">{{$r.Guilds}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.Guilds}} creados</span>
+                    <span class="tag {{if gt $r.GuildsSkipped 0}}is-warning is-light{{end}}">{{$r.GuildsSkipped}} omitidos</span>
+                </div>
+            </div>
+        </div>
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Economía de Gremios</p>
+                <p class="import-stat-value">{{$r.GuildTransactions}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.GuildTransactions}} creadas</span>
+                    <span class="tag {{if gt $r.GuildTransactionsSkipped 0}}is-warning is-light{{end}}">{{$r.GuildTransactionsSkipped}} omitidas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{if $r.Errors}}
+    <details class="import-errors">
+        <summary>Ver {{len $r.Errors}} {{if eq (len $r.Errors) 1}}error{{else}}errores{{end}}</summary>
+        <ul>
+            {{range $r.Errors}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </details>
     {{end}}
-    <hr>
-    <p class="is-size-7">{{.Summary}}</p>
 </div>
 {{end}}
 
-<div class="box">
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+<form id="import-form" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
-        <div class="field">
-            <label class="label">Hojas a importar</label>
-            <div class="control">
-                <label class="checkbox">
-                    <input type="checkbox" data-check-all="#import-sheets-checkboxes" checked>
+    <div class="columns is-multiline">
+        <div class="column is-12-tablet is-5-desktop">
+            <div class="box import-upload-box">
+                <p class="title is-6 mb-1">1 · Archivo Excel</p>
+                <p class="help mb-3">Solo se aceptan archivos <strong>.xlsx</strong></p>
+
+                <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0" aria-label="Seleccionar archivo Excel">
+                    <input id="import-file" class="import-file-input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                    <div class="import-dropzone-inner">
+                        <span class="import-dropzone-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </span>
+                        <p class="import-dropzone-title"><strong>Arrastra tu .xlsx aquí</strong></p>
+                        <p class="import-dropzone-sub">o <span class="has-text-link">haz clic para buscarlo</span></p>
+                    </div>
+                </div>
+
+                <div id="import-file-preview" class="import-file-preview" hidden>
+                    <span class="import-file-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </span>
+                    <div class="import-file-meta">
+                        <p id="import-file-name" class="import-file-name">archivo.xlsx</p>
+                        <p id="import-file-size" class="import-file-size">0 KB</p>
+                    </div>
+                    <button type="button" id="import-file-clear" class="delete" aria-label="Quitar archivo"></button>
+                </div>
+                <p id="import-file-error" class="help is-danger" hidden>El archivo debe ser un .xlsx válido.</p>
+            </div>
+        </div>
+
+        <div class="column is-12-tablet is-7-desktop">
+            <div class="box">
+                <div class="import-sheets-head">
+                    <div>
+                        <p class="title is-6 mb-1">2 · Hojas a importar</p>
+                        <p class="help">Desmarca las hojas que quieras omitir.</p>
+                    </div>
+                    <span id="import-sheets-count" class="tag is-info is-light">8 de 8</span>
+                </div>
+
+                <label class="checkbox import-select-all">
+                    <input type="checkbox" data-check-all="#import-sheets-checkboxes input[type=checkbox]" checked>
                     <strong>Seleccionar todas</strong>
                 </label>
-                <div id="import-sheets-checkboxes" class="columns is-multiline mt-2">
+
+                <div id="import-sheets-checkboxes" class="sheets-grid mt-3">
                     {{range .Sheets}}
-                    <div class="column is-half">
-                        <label class="checkbox">
-                            <input type="checkbox" name="sheets" value="{{.Key}}" checked>
-                            {{.Name}}
-                        </label>
-                    </div>
+                    <label class="checkbox sheet-option">
+                        <input type="checkbox" name="sheets" value="{{.Key}}" checked>
+                        <span>{{.Name}}</span>
+                    </label>
                     {{end}}
                 </div>
             </div>
-            <p class="help">Selecciona qué hojas del archivo Excel quieres importar. Desmarca las que quieras omitir.</p>
         </div>
+    </div>
 
-        <div class="field">
-            <label class="label">Archivo Excel</label>
-            <div class="file is-boxed is-fullwidth">
-                <label class="file-label">
-                    <input class="file-input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
-                    <span class="file-cta">
-                        <span class="file-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </span>
-                        <span class="file-label">Elegir archivo .xlsx...</span>
-                    </span>
-                </label>
-            </div>
-        </div>
-
-        <div class="field">
-            <div class="control">
-                <button type="submit" class="button is-primary">Importar</button>
-            </div>
-        </div>
-    </form>
-</div>
+    <div class="import-actions">
+        <button id="import-submit" type="submit" class="button is-primary is-medium">
+            <span class="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </span>
+            <span>Importar datos</span>
+        </button>
+        <button type="reset" id="import-reset" class="button is-light">Limpiar</button>
+    </div>
+</form>
 {{end}}
