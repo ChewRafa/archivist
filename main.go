@@ -73,6 +73,15 @@ func main() {
 	r.Use(sessions.Sessions("archivist_session", store))
 
 	r.GET("/health", func(c *gin.Context) {
+		sqlDB, err := DB.DB()
+		if err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "error", "db": "unavailable", "version": Version})
+			return
+		}
+		if err := sqlDB.Ping(); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "error", "db": "unreachable", "version": Version})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "version": Version})
 	})
 
