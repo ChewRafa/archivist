@@ -102,7 +102,7 @@
         <ul class="pagination-list">
             {{range $i := seq 1 .Pagination.TotalPages}}
                 <li>
-                    {{if eq $i .Pagination.Page}}
+		  {{if eq $i $.Pagination.Page}}
                         <a class="pagination-link is-current" aria-label="Page {{$i}}" aria-current="page">{{$i}}</a>
                     {{else}}
                         <a class="pagination-link" href="{{$.Pagination.BaseURL}}?page={{$i}}&per_page={{$.Pagination.PerPage}}">{{$i}}</a>
