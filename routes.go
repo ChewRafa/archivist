@@ -307,8 +307,29 @@ func MissionsHandler(c *gin.Context) {
 }
 
 func DLHandler(c *gin.Context) {
+	page := 1
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	perPage := 25
+	if pp := c.Query("per_page"); pp != "" {
+		if parsed, err := strconv.Atoi(pp); err == nil && (parsed == 25 || parsed == 50 || parsed == 100) {
+			perPage = parsed
+		}
+	}
+	offset := (page - 1) * perPage
+
+	var total int64
+	DB.Model(&DLUsage{}).Count(&total)
+	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
 	var usages []DLUsage
-	DB.Order("date DESC").Preload("Character").Limit(50).Find(&usages)
+	DB.Order("date DESC").Preload("Character").Limit(perPage).Offset(offset).Find(&usages)
 
 	var characters []Character
 	DB.Order("name ASC").Find(&characters)
@@ -318,6 +339,13 @@ func DLHandler(c *gin.Context) {
 		"ActiveMenu": "dl",
 		"Usages":     usages,
 		"Characters": characters,
+		"Pagination": gin.H{
+			"Page":       page,
+			"PerPage":    perPage,
+			"Total":      total,
+			"TotalPages": totalPages,
+			"BaseURL":    "/dl",
+		},
 	})
 }
 
@@ -492,8 +520,29 @@ func DLUsageDeleteHandler(c *gin.Context) {
 }
 
 func TransactionsHandler(c *gin.Context) {
+	page := 1
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	perPage := 25
+	if pp := c.Query("per_page"); pp != "" {
+		if parsed, err := strconv.Atoi(pp); err == nil && (parsed == 25 || parsed == 50 || parsed == 100) {
+			perPage = parsed
+		}
+	}
+	offset := (page - 1) * perPage
+
+	var total int64
+	DB.Model(&Transaction{}).Count(&total)
+	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
 	var transactions []Transaction
-	DB.Order("date DESC").Preload("Character").Limit(100).Find(&transactions)
+	DB.Order("date DESC").Preload("Character").Limit(perPage).Offset(offset).Find(&transactions)
 
 	var characters []Character
 	DB.Order("name ASC").Find(&characters)
@@ -503,6 +552,13 @@ func TransactionsHandler(c *gin.Context) {
 		"ActiveMenu":   "transactions",
 		"Transactions": transactions,
 		"Characters":   characters,
+		"Pagination": gin.H{
+			"Page":       page,
+			"PerPage":    perPage,
+			"Total":      total,
+			"TotalPages": totalPages,
+			"BaseURL":    "/transactions",
+		},
 	})
 }
 
@@ -1783,8 +1839,29 @@ func CharacterDeleteHandler(c *gin.Context) {
 }
 
 func CostOfLivingHandler(c *gin.Context) {
+	page := 1
+	if p := c.Query("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	perPage := 25
+	if pp := c.Query("per_page"); pp != "" {
+		if parsed, err := strconv.Atoi(pp); err == nil && (parsed == 25 || parsed == 50 || parsed == 100) {
+			perPage = parsed
+		}
+	}
+	offset := (page - 1) * perPage
+
+	var total int64
+	DB.Model(&CostOfLiving{}).Count(&total)
+	totalPages := int((total + int64(perPage) - 1) / int64(perPage))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
 	var entries []CostOfLiving
-	DB.Order("date DESC").Preload("Character").Limit(100).Find(&entries)
+	DB.Order("date DESC").Preload("Character").Limit(perPage).Offset(offset).Find(&entries)
 
 	var characters []Character
 	DB.Order("name ASC").Find(&characters)
@@ -1794,6 +1871,13 @@ func CostOfLivingHandler(c *gin.Context) {
 		"ActiveMenu": "cost-of-living",
 		"Entries":    entries,
 		"Characters": characters,
+		"Pagination": gin.H{
+			"Page":       page,
+			"PerPage":    perPage,
+			"Total":      total,
+			"TotalPages": totalPages,
+			"BaseURL":    "/cost-of-living",
+		},
 	})
 }
 
