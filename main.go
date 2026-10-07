@@ -12,6 +12,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -22,6 +23,15 @@ func main() {
 	if *showVersion {
 		fmt.Println(Version)
 		return
+	}
+
+	// Load .env for local dev. In production (e.g. Render) env vars are
+	// injected directly, so a missing .env is not an error.
+	// Real environment variables always take precedence over .env values.
+	if os.Getenv("GIN_MODE") != "release" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("No .env file found, using environment variables")
+		}
 	}
 
 	dbPath := os.Getenv("DB_PATH")

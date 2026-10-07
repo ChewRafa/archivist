@@ -6,8 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -22,11 +24,23 @@ func main() {
 		return
 	}
 
+	// Load .env for local dev so DATABASE_URL/DB_PATH work without exports.
+	// Real environment variables take precedence over .env values.
+	if os.Getenv("GIN_MODE") != "release" {
+		if err := godotenv.Load(); err != nil {
+			log.Println("No .env file found, using environment variables")
+		}
+	}
+
 	if flag.NArg() < 1 {
 		log.Fatal("Usage: importer [--sheets=...] <path-to-excel-file>")
 	}
 
-	Init("data/archivist.db")
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		dbPath = "data/archivist.db"
+	}
+	Init(dbPath)
 
 	f, err := excelize.OpenFile(flag.Arg(0))
 	if err != nil {
