@@ -84,3 +84,46 @@
 </body>
 </html>
 {{end}}
+
+{{define "pagination"}}
+{{if .Pagination}}
+<div class="pagination-container">
+    <nav class="pagination" role="navigation" aria-label="pagination" style="margin-bottom: 1rem;">
+        {{if gt .Pagination.Page 1}}
+            <a class="pagination-previous" href="{{.Pagination.BaseURL}}?page={{sub .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}">Anterior</a>
+        {{else}}
+            <a class="pagination-previous" disabled>Anterior</a>
+        {{end}}
+        {{if lt .Pagination.Page .Pagination.TotalPages}}
+            <a class="pagination-next" href="{{.Pagination.BaseURL}}?page={{add .Pagination.Page 1}}&per_page={{.Pagination.PerPage}}">Siguiente</a>
+        {{else}}
+            <a class="pagination-next" disabled>Siguiente</a>
+        {{end}}
+        <ul class="pagination-list">
+            {{range $i := seq 1 .Pagination.TotalPages}}
+                <li>
+                    {{if eq $i .Pagination.Page}}
+                        <a class="pagination-link is-current" aria-label="Page {{$i}}" aria-current="page">{{$i}}</a>
+                    {{else}}
+                        <a class="pagination-link" href="{{$.Pagination.BaseURL}}?page={{$i}}&per_page={{$.Pagination.PerPage}}">{{$i}}</a>
+                    {{end}}
+                </li>
+            {{end}}
+        </ul>
+    </nav>
+    <div class="field has-addons">
+        <div class="control">
+            <div class="select">
+                <select id="per-page-select" onchange="window.location.href='{{.Pagination.BaseURL}}?page=1&per_page=' + this.value">
+                    <option value="25" {{if eq .Pagination.PerPage 25}}selected{{end}}>25</option>
+                    <option value="50" {{if eq .Pagination.PerPage 50}}selected{{end}}>50</option>
+                    <option value="100" {{if eq .Pagination.PerPage 100}}selected{{end}}>100</option>
+                </select>
+            </div>
+        </div>
+        <p class="control"><span class="button is-static">por página</span></p>
+    </div>
+    <p class="pagination-info">Mostrando página {{.Pagination.Page}} de {{.Pagination.TotalPages}} ({{.Pagination.Total}} registros)</p>
+</div>
+{{end}}
+{{end}}
