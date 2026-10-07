@@ -53,8 +53,8 @@ Configuration is handled via environment variables. See `env.example` for a temp
 | `PORT`            | No       | `8080`                                       | Server port (set automatically by Render) |
 | `DB_PATH`         | No       | `data/archivist.db`                          | SQLite path (local dev)                |
 | `DATABASE_URL`    | On Render | —                                           | PostgreSQL DSN (set automatically by Render, overrides SQLite) |
-| `ADMIN_USERNAME`  | On first deploy | —                                     | Initial admin username (auto-created if no users exist) |
-| `ADMIN_PASSWORD`  | On first deploy | —                                     | Initial admin password                 |
+| `ADMIN_USERNAME`  | On first deploy | —                                     | Initial admin username (created if missing; password re-synced from env on every boot while set) |
+| `ADMIN_PASSWORD`  | On first deploy | —                                     | Initial admin password (unset both after first login; generated values in `render.yaml` use `sync: false` so dashboard edits survive Blueprint syncs) |
 
 ## Deployment
 
@@ -69,7 +69,7 @@ The repo includes a [`render.yaml`](render.yaml) for one-click deployment.
    - A **Web Service** (free tier — sleeps after 15 min idle)
    - A **PostgreSQL database** (free tier — 1 GB)
 5. Render automatically sets `DATABASE_URL` on the web service — the app detects it and uses PostgreSQL instead of SQLite
-6. On first deploy, if `ADMIN_USERNAME` and `ADMIN_PASSWORD` are set, an admin user is created automatically
+6. On first deploy, if `ADMIN_USERNAME` and `ADMIN_PASSWORD` are set, the admin user is created automatically (or its password is reset if it already exists — check service logs for `Admin user '...' created/password synced`)
 7. Retrieve `SESSION_SECRET` and `ADMIN_PASSWORD` from Render's **Environment** tab
 
 > **Important**: After the first deploy succeeds, remove `ADMIN_USERNAME` and `ADMIN_PASSWORD` env vars for security.
@@ -82,15 +82,15 @@ The repo includes a [`render.yaml`](render.yaml) for one-click deployment.
 | **Build Command**      | `./build.sh`              |
 | **Start Command**      | `./app`                   |
 | **Health Check Path**  | `/health`                 |
-| **PostgreSQL**         | Create a free Render PostgreSQL instance |
+| **PostgreSQL**         | Link a Render PostgreSQL instance so `DATABASE_URL` is injected (`fromDatabase: archivist-db`) |
 
 Required environment variables:
 - `SESSION_SECRET` — set to a long random string
-- `DATABASE_URL` — set automatically when PostgreSQL is linked; the app auto-detects this and uses PostgreSQL
+- `DATABASE_URL` — injected from `archivist-db` via `fromDatabase` in `render.yaml` when linked; the app auto-detects this and uses PostgreSQL
 
 Optional (first deploy only):
-- `ADMIN_USERNAME` — initial admin username
-- `ADMIN_PASSWORD` — initial admin password
+- `ADMIN_USERNAME` — initial admin username (created if missing)
+- `ADMIN_PASSWORD` — initial admin password (resets the admin password on every boot while set, so it also recovers a lost password)
 
 ### Local vs Render
 
@@ -99,7 +99,7 @@ The app auto-detects the environment:
 | Env | Database | Config |
 |-----|----------|--------|
 | **Local dev** | SQLite (`data/archivist.db`) | No `DATABASE_URL` set |
-| **Render** | PostgreSQL (free 1 GB) | `DATABASE_URL` set automatically |
+| **Render** | PostgreSQL (free 1 GB) | `DATABASE_URL` injected from `archivist-db` via `fromDatabase` in `render.yaml` |
 
 ## Usage
 
@@ -156,7 +156,7 @@ data/
 └── archivist.db       SQLite database (auto-created)
 ```
 
-Both binaries live in a single flat `package main`. The server is built by default (`go build -o app .`); the importer shares the same code and is built with a build tag: `go build -tags importer -o importer .`.
+Both binaries live in a single flat `package main`. The server is built by default (`go build -tags netgo -o app .`); the importer shares the same code and is built with a build tag: `go build -tags importer -o importer .`.
 
 ## Routes
 
@@ -250,7 +250,7 @@ This project uses [Semantic Versioning](https://semver.org). The current version
 
 ```bash
 go run . --version          # prints Version (dev if no tag)
-go build -ldflags "-X main.Version=v0.1.0-alpha.1" -o app .
+go build -tags netgo -ldflags "-s -w -X main.Version=v0.1.0-alpha.1" -o app .
 make build                  # auto-derives VERSION from git describe --tags
 ./build.sh                  # same, used by Render
 curl http://localhost:8080/health  # {"status":"ok","version":"v0.1.0-alpha.1"}
