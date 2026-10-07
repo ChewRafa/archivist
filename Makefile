@@ -3,7 +3,7 @@ BIN      = server
 DB       = data/archivist.db
 EXCEL   := archivist.xlsx
 
-.PHONY: help build run run-release dev build-server build-importer import admin tidy vet fmt clean db-reset test
+.PHONY: help build run run-release dev build-server build-importer import version tidy vet fmt clean db-reset test
 
 help:
 	@echo "Usage: make <target>"
@@ -16,7 +16,7 @@ help:
 	@echo "  run-release   Start server in release mode"
 	@echo "  dev           Build then run"
 	@echo "  import        Import Excel data into DB"
-	@echo "  admin         Create admin user (prompts for password)"
+	@echo "  version       Print the derived VERSION (git describe --tags)"
 	@echo "  tidy          go mod tidy"
 	@echo "  vet           go vet ./..."
 	@echo "  fmt           go fmt ./..."
@@ -26,15 +26,18 @@ help:
 	@echo "  help          Show this message"
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS  = -X main.Version=$(VERSION)
+LDFLAGS  = -s -w -X main.Version=$(VERSION)
 
 build: build-server build-importer
 
 build-server:
-	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN) .
+	$(GO) build -tags netgo -ldflags "$(LDFLAGS)" -o $(BIN) .
 
 build-importer:
 	$(GO) build -tags importer -ldflags "$(LDFLAGS)" -o importer .
+
+version:
+	@echo $(VERSION)
 
 run:
 	GIN_MODE=debug $(GO) run .
@@ -46,9 +49,6 @@ dev: build run
 
 import:
 	$(GO) run -tags importer . ./$(EXCEL)
-
-admin:
-	$(GO) run . --create-admin
 
 tidy:
 	$(GO) mod tidy

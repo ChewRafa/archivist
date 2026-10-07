@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Login rate limiting with an in-memory per-IP limiter and failed-attempt tracking (`middleware.go`, `auth.go`); configurable via `LOGIN_MAX_ATTEMPTS` (default `5`) and `LOGIN_WINDOW_MINUTES` (default `15`)
+- Structured logging with `log/slog` and a JSON handler initialized by `InitLogger` (`logger.go`)
+- Pagination for Transactions, DL, and Cost of Living (`?page=&per_page=`, default 25) with a reusable `pagination` partial and `seq`/`add`/`sub` template funcs
+- `character_stats` database view to eliminate N+1 queries in dashboard stats, rebuilt via `RefreshCharacterStatsView` (`db.go`, `services.go`)
+- Unique index and create/update validation for `Character.Number` (`models.go`, `routes.go`)
+- Database connectivity check in `/health` — returns `503` with `db: unavailable`/`db: unreachable` on failure (`main.go`)
+- Drag-and-drop Excel import upload UI with a result dashboard
+- Admin user upsert from `ADMIN_USERNAME`/`ADMIN_PASSWORD` on boot (`EnsureAdminFromEnv` in `users.go`)
+- `.env` file loading in local dev and `DB_PATH` support in the importer
+- Spanish `dd/mmm/yyyy` date display across the UI
+- Sortable character tables, gold alerts, default sort, and dynamic form selects
+- Tests: `admin_seed_test.go` (admin env seed) and `services_stats_test.go` (dashboard stats)
+
+### Fixed
+- Stop regenerating the CSRF token on every request — the session token now persists across renders (`render.go`)
+- Race condition in `UpsertAdminUser` by wrapping the lookup/create in a transaction (`users.go`)
+- Use the root context for `Pagination.Page` so the template resolves the current page correctly
+
+### Changed
+- Replace all `log.*` calls with `slog.*` (`db.go`, `render.go`, `users.go`)
+- Rewrite the dashboard stats query with inline error handling (`services.go`)
+- Link release binaries with the `netgo` tag and strip debug info (`build.sh`)
+- Wire `DATABASE_URL` via `fromDatabase` and pin generated secrets in `render.yaml` (`sync: false`)
+
 ## [0.1.0-alpha.1] - 2026-09-22
 
 ### Added

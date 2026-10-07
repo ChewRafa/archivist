@@ -9,12 +9,13 @@ TTRPG Character and Guild Tracking — a web application built with Go for manag
 - **Dashboard** — overview stats, level/class/species distributions, recent missions and transactions
 - **Characters** — full CRUD with status tracking (Active, Retired, Dead), auto-calculated level, XP, gold balance, and renown
 - **Missions** — create missions with per-character XP, gold, and renown entries
-- **DL (Días Libres)** — track free-day usage per character with gold adjustments
-- **Cost of Living** — record recurring upkeep costs per character
-- **Transactions** — track gold income and expenses per character
+- **DL (Días Libres)** — track free-day usage per character with gold adjustments, with pagination
+- **Cost of Living** — record recurring upkeep costs per character, with pagination
+- **Transactions** — track gold income and expenses per character, with pagination
 - **Guilds** — manage guilds with leaders, members, halls, treasuries, and cost of living
-- **Excel Import** — bulk import data from Excel spreadsheets
-- **Authentication** — session-based auth with bcrypt password hashing and CSRF protection
+- **Excel Import** — bulk import data from Excel spreadsheets via drag-and-drop upload with a result dashboard
+- **Authentication** — session-based auth with bcrypt password hashing, CSRF protection, and login rate limiting (brute-force protection)
+- **Structured logging** — JSON logs via Go's `log/slog`
 
 ## Tech Stack
 
@@ -25,6 +26,7 @@ TTRPG Character and Guild Tracking — a web application built with Go for manag
 - **Templates:** Go `html/template` with block layout
 - **CSS:** [Bulma](https://bulma.io) + custom styles
 - **Auth:** bcrypt, session cookies via `gin-contrib/sessions`
+- **Logging:** Go `log/slog` with JSON handler (`logger.go`)
 
 ## Prerequisites
 
@@ -44,17 +46,19 @@ Open http://localhost:8080 in your browser and log in.
 
 ## Configuration
 
-Configuration is handled via environment variables. See `env.example` for a template.
+Configuration is handled via environment variables. See `env.example` for a template. In local dev a `.env` file is loaded automatically (skipped when `GIN_MODE=release`); real environment variables always take precedence.
 
-| Variable          | Required | Default                                      | Description                            |
-|-------------------|----------|----------------------------------------------|----------------------------------------|
-| `SESSION_SECRET`  | In prod  | `dev-secret-change-in-production`            | Key for signing session cookies        |
-| `GIN_MODE`        | No       | `release`                                    | Gin mode (`release` or `debug`)        |
-| `PORT`            | No       | `8080`                                       | Server port (set automatically by Render) |
-| `DB_PATH`         | No       | `data/archivist.db`                          | SQLite path (local dev)                |
-| `DATABASE_URL`    | On Render | —                                           | PostgreSQL DSN (set automatically by Render, overrides SQLite) |
-| `ADMIN_USERNAME`  | On first deploy | —                                     | Initial admin username (created if missing; password re-synced from env on every boot while set) |
-| `ADMIN_PASSWORD`  | On first deploy | —                                     | Initial admin password (unset both after first login; generated values in `render.yaml` use `sync: false` so dashboard edits survive Blueprint syncs) |
+| Variable             | Required | Default                                      | Description                            |
+|----------------------|----------|----------------------------------------------|----------------------------------------|
+| `SESSION_SECRET`     | In prod  | `dev-secret-change-in-production`            | Key for signing session cookies        |
+| `GIN_MODE`           | No       | `release`                                    | Gin mode (`release` or `debug`)        |
+| `PORT`               | No       | `8080`                                       | Server port (set automatically by Render) |
+| `DB_PATH`            | No       | `data/archivist.db`                          | SQLite path (local dev and importer)   |
+| `DATABASE_URL`       | On Render | —                                           | PostgreSQL DSN (set automatically by Render, overrides SQLite) |
+| `ADMIN_USERNAME`     | On first deploy | —                                     | Initial admin username (created if missing; password re-synced from env on every boot while set) |
+| `ADMIN_PASSWORD`     | On first deploy | —                                     | Initial admin password (unset both after first login; generated values in `render.yaml` use `sync: false` so dashboard edits survive Blueprint syncs) |
+| `LOGIN_MAX_ATTEMPTS` | No       | `5`                                          | Max failed login attempts per IP before throttling |
+| `LOGIN_WINDOW_MINUTES` | No     | `15`                                         | Sliding window (minutes) for login rate limiting |
 
 ## Deployment
 
@@ -134,20 +138,30 @@ main.go                HTTP server entry point (server binary)
 importer_main.go       Excel → SQLite import tool (importer binary)
 routes.go              Route setup and all CRUD handlers
 auth.go                Login/logout handlers
-middleware.go          Auth and CSRF middleware
+middleware.go          Auth, CSRF, and login rate-limit middleware
 render.go              Template compilation and rendering
-db.go                  GORM + SQLite/PostgreSQL initialization and auto-migration
-models.go              All models: User, Character, DLUsage, Transaction,
-                       CostOfLiving, CharacterRegistry, Mission, MissionEntry,
-                       Guild, GuildTransaction
-services.go            XP/level/gold/renown calculations
-users.go               Password hashing and user authentication
+db.go                  GORM + SQLite/PostgreSQL initialization, auto-migration,
+                       and the character_stats view
+models.go              Models: Character, DLUsage, Transaction, CostOfLiving,
+                       CharacterRegistry, Mission, MissionEntry, Guild,
+                       GuildTransaction
+models_user.go         User model
+services.go            XP/level/gold/renown calculations + stats queries
+users.go               Password hashing, user auth, admin user upsert
+guild_service.go       Guild invariants (join/leave validation, name sync)
 guild_treasury.go      Guild treasury sync
 importer.go            Excel import engine
 importer_handlers.go   Web-based Excel import handler
+logger.go              slog JSON logger initialization
+version.go             Version variable (injected via -ldflags)
+admin_seed_test.go     Admin env-seed tests
+services_stats_test.go Dashboard stats tests
+
+Makefile               Common build/run/test targets
+build.sh               Release build used by Render
 
 resources/
-├── base.html          Base layout with sidebar and CSRF
+├── base.html          Base layout with sidebar, CSRF, pagination partial
 ├── login.html         Standalone login page
 ├── pages/             Content templates for each page
 └── static/            CSS and other static assets
@@ -162,11 +176,12 @@ Both binaries live in a single flat `package main`. The server is built by defau
 
 ### Public (no authentication required)
 
-| Method | Path          | Description        |
-|--------|---------------|--------------------|
-| GET    | `/login`      | Login page         |
-| POST   | `/login`      | Login form submit  |
-| GET    | `/static/*`   | Static files       |
+| Method | Path          | Description                                |
+|--------|---------------|--------------------------------------------|
+| GET    | `/login`      | Login page                                 |
+| POST   | `/login`      | Login form submit (rate limited per IP)    |
+| GET    | `/static/*`   | Static files                               |
+| GET    | `/health`     | Health check (DB ping; `503` if unreachable) |
 
 ### Authenticated
 
@@ -216,8 +231,14 @@ Both binaries live in a single flat `package main`. The server is built by defau
 | GET    | `/guilds/detail/:id/edit`                          | Edit guild form          |
 | POST   | `/guilds/detail/:id`                               | Update guild             |
 | POST   | `/guilds/detail/:id/delete`                        | Delete guild             |
+| POST   | `/guilds/detail/:id/transactions`                  | Create guild transaction |
+| GET    | `/guilds/detail/:id/transactions/:txId/edit`       | Edit guild transaction   |
+| POST   | `/guilds/detail/:id/transactions/:txId`            | Update guild transaction |
+| POST   | `/guilds/detail/:id/transactions/:txId/delete`     | Delete guild transaction |
 
 All mutating requests (POST) require a valid `csrf_token` field.
+
+List pages (`/transactions`, `/dl`, `/cost-of-living`) are paginated via `?page=N&per_page=M` (default 25 per page).
 
 ## Excel Import Format
 
@@ -244,6 +265,17 @@ The database auto-migrates on every start — schema changes are applied live. S
 GIN_MODE=debug go run .
 ```
 
+Other useful commands:
+
+```bash
+go test ./...               # run tests
+make                        # build server + importer binaries
+make run                    # start dev server (GIN_MODE=debug)
+make test                   # same as go test ./...
+```
+
+Logs are structured JSON written to stdout via `log/slog` (initialized by `InitLogger` in `logger.go`).
+
 ### Versioning
 
 This project uses [Semantic Versioning](https://semver.org). The current version is injected at build time:
@@ -252,9 +284,12 @@ This project uses [Semantic Versioning](https://semver.org). The current version
 go run . --version          # prints Version (dev if no tag)
 go build -tags netgo -ldflags "-s -w -X main.Version=v0.1.0-alpha.1" -o app .
 make build                  # auto-derives VERSION from git describe --tags
-./build.sh                  # same, used by Render
+make version                # print the derived VERSION
+./build.sh                  # same as make build, used by Render
 curl http://localhost:8080/health  # {"status":"ok","version":"v0.1.0-alpha.1"}
 ```
+
+`/health` also pings the database: if the connection fails it returns `503` with `{"status":"error","db":"unavailable","version":"..."}` (or `"db":"unreachable"` when the ping fails).
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
