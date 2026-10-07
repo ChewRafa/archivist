@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -50,7 +51,8 @@ func loadTemplates() {
 
 	pages, err := filepath.Glob("resources/pages/*.html")
 	if err != nil {
-		log.Fatal("Failed to glob page templates: ", err)
+		slog.Error("Failed to glob page templates", "error", err)
+		os.Exit(1)
 	}
 	for _, page := range pages {
 		name := filepath.Base(page)
@@ -58,7 +60,7 @@ func loadTemplates() {
 		tmpl = template.Must(tmpl.ParseFiles(page))
 		templates[name] = tmpl
 	}
-	log.Println("Loaded", len(templates), "page templates")
+	slog.Info("Loaded page templates", "count", len(templates))
 }
 
 func generateCSRFToken() string {
@@ -128,6 +130,6 @@ func render(c *gin.Context, status int, page string, data gin.H) {
 	c.Status(status)
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	if err := tmpl.ExecuteTemplate(c.Writer, "base.html", data); err != nil {
-		log.Printf("template %s execute error: %v", page, err)
+		slog.Error("template execute error", "page", page, "error", err)
 	}
 }

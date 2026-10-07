@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,14 +24,16 @@ func Init(dbPath string) {
 			dir := filepath.Dir(dbPath)
 			if dir != "." && dir != "" {
 				if err := os.MkdirAll(dir, 0755); err != nil {
-					log.Fatal("Failed to create database directory: ", err)
+					slog.Error("Failed to create database directory", "error", err)
+					os.Exit(1)
 				}
 			}
 		}
 		DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	}
 	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
+		slog.Error("Failed to connect to database", "error", err)
+		os.Exit(1)
 	}
 
 	// Clean guild_members join table before AutoMigrate (source of truth fix)
@@ -58,7 +60,8 @@ func Init(dbPath string) {
 		&GuildTransaction{},
 	)
 	if err != nil {
-		log.Fatal("Failed to migrate database: ", err)
+		slog.Error("Failed to migrate database", "error", err)
+		os.Exit(1)
 	}
 
 	// Drop orphan columns from old CostOfLiving model
@@ -73,23 +76,23 @@ func Init(dbPath string) {
 	if DB.Migrator().HasTable("guild_members") {
 		// Create unique index if not exists (SQLite/Postgres compatible via GORM)
 		if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_guild_members_unique ON guild_members(guild_id, character_id)").Error; err != nil {
-			log.Printf("Warning: failed to create guild_members unique index: %v", err)
+			slog.Warn("failed to create guild_members unique index", "error", err)
 		}
 		// Post-migrate cleanup again in case concurrent inserts created dupes
 		deduplicateGuildMembers()
 		cleanupGuildMembersOrphans()
 		// Reconcile characters.guild_name cache to join table truth
 		if err := SyncAllCharacterGuildNames(DB); err != nil {
-			log.Printf("Warning: failed to sync guild_name cache: %v", err)
+			slog.Warn("failed to sync guild_name cache", "error", err)
 		}
 	}
 
 	// Create or replace character_stats view
 	if err := createCharacterStatsView(); err != nil {
-		log.Printf("Warning: failed to create character_stats view: %v", err)
+		slog.Warn("failed to create character_stats view", "error", err)
 	}
 
-	log.Println("Database initialized successfully")
+	slog.Info("Database initialized successfully")
 }
 
 func deduplicateGuildMembers() {
@@ -103,11 +106,11 @@ func deduplicateGuildMembers() {
 		res = DB.Exec("DELETE FROM guild_members WHERE id NOT IN (SELECT MIN(id) FROM guild_members GROUP BY guild_id, character_id)")
 	}
 	if res.Error != nil {
-		log.Printf("Warning: failed to deduplicate guild_members: %v", res.Error)
+		slog.Warn("failed to deduplicate guild_members", "error", res.Error)
 		return
 	}
 	if res.RowsAffected > 0 {
-		log.Printf("Removed %d duplicate row(s) from guild_members", res.RowsAffected)
+		slog.Info("Removed duplicate rows from guild_members", "count", res.RowsAffected)
 	}
 }
 
@@ -121,7 +124,7 @@ func cleanupGuildMembersOrphans() {
 		return
 	}
 	if res.RowsAffected > 0 {
-		log.Printf("Removed %d orphan row(s) from guild_members", res.RowsAffected)
+		slog.Info("Removed orphan rows from guild_members", "count", res.RowsAffected)
 	}
 }
 
@@ -136,11 +139,11 @@ func deduplicateTable(table string, columns []string) {
 	)
 	res := DB.Exec(sql)
 	if res.Error != nil {
-		log.Printf("Warning: failed to deduplicate %s: %v", table, res.Error)
+		slog.Warn("failed to deduplicate table", "table", table, "error", res.Error)
 		return
 	}
 	if res.RowsAffected > 0 {
-		log.Printf("Removed %d duplicate row(s) from %s", res.RowsAffected, table)
+		slog.Info("Removed duplicate rows", "table", table, "count", res.RowsAffected)
 	}
 }
 

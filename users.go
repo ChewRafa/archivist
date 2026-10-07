@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -78,39 +78,39 @@ func EnsureAdminFromEnv() {
 	adminUser := strings.TrimSpace(os.Getenv("ADMIN_USERNAME"))
 	adminPass := os.Getenv("ADMIN_PASSWORD")
 	if adminPass != "" {
-		log.Println("ADMIN_PASSWORD: [set]")
+		slog.Info("ADMIN_PASSWORD: [set]")
 	} else {
-		log.Println("ADMIN_PASSWORD: [empty]")
+		slog.Info("ADMIN_PASSWORD: [empty]")
 	}
 	if adminUser == "" && adminPass == "" {
-		log.Println("ADMIN_USERNAME/ADMIN_PASSWORD not set, skipping admin seed")
+		slog.Info("ADMIN_USERNAME/ADMIN_PASSWORD not set, skipping admin seed")
 		return
 	}
 	if adminUser == "" || adminPass == "" {
-		log.Println("WARNING: ADMIN_USERNAME and ADMIN_PASSWORD must both be set to seed admin user, skipping")
+		slog.Warn("ADMIN_USERNAME and ADMIN_PASSWORD must both be set to seed admin user, skipping")
 		return
 	}
 
 	if os.Getenv("DATABASE_URL") != "" {
-		log.Println("Seeding admin user against PostgreSQL (DATABASE_URL set)")
+		slog.Info("Seeding admin user against PostgreSQL (DATABASE_URL set)")
 	} else {
-		log.Printf("Seeding admin user against SQLite (DATABASE_URL empty, DB_PATH=%s)", os.Getenv("DB_PATH"))
+		slog.Info("Seeding admin user against SQLite", "db_path", os.Getenv("DB_PATH"))
 	}
 
 	var count int64
 	if err := DB.Model(&User{}).Count(&count).Error; err != nil {
-		log.Printf("Failed to count users for admin seed: %s", err)
+		slog.Error("Failed to count users for admin seed", "error", err)
 		return
 	}
 	created, err := UpsertAdminUser(adminUser, adminPass)
 	if err != nil {
-		log.Printf("Failed to seed admin user '%s': %s", adminUser, err)
+		slog.Error("Failed to seed admin user", "username", adminUser, "error", err)
 		return
 	}
 	if created {
-		log.Printf("Admin user '%s' created from environment variables (%d pre-existing user(s))", adminUser, count)
+		slog.Info("Admin user created from environment variables", "username", adminUser, "pre_existing_users", count)
 	} else {
-		log.Printf("Admin user '%s' password synced from environment variables (%d user(s) total)", adminUser, count)
+		slog.Info("Admin user password synced from environment variables", "username", adminUser, "total_users", count)
 	}
 }
 
