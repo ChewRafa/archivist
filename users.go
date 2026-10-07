@@ -45,24 +45,28 @@ func UpsertAdminUser(username, password string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	var user User
-	err = DB.Where("username = ?", username).First(&user).Error
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, err
-		}
-		if err := DB.Create(&User{Username: username, PasswordHash: hash}).Error; err != nil {
-			// Race: another instance created it concurrently — fall back to update.
-			if findErr := DB.Where("username = ?", username).First(&user).Error; findErr != nil {
-				return false, err
+
+	var created bool
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		var existing User
+		err := tx.Where("username = ?", username).First(&existing).Error
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
 			}
-			user.PasswordHash = hash
-			return false, DB.Save(&user).Error
+			// Not found - insert new
+			user := User{Username: username, PasswordHash: hash}
+			if err := tx.Create(&user).Error; err != nil {
+				return err
+			}
+			created = true
+			return nil
 		}
-		return true, nil
-	}
-	user.PasswordHash = hash
-	return false, DB.Save(&user).Error
+		// Found - update password
+		existing.PasswordHash = hash
+		return tx.Save(&existing).Error
+	})
+	return created, err
 }
 
 // EnsureAdminFromEnv seeds/resets the admin user from ADMIN_USERNAME and
