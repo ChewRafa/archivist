@@ -113,11 +113,6 @@ func render(c *gin.Context, status int, page string, data gin.H) {
 
 	if data["CSRFToken"] == nil {
 		token := session.Get("csrf_token")
-		if token == nil {
-			token = generateCSRFToken()
-			session.Set("csrf_token", token)
-			session.Save()
-		}
 		data["CSRFToken"] = token
 	}
 
