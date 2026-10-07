@@ -5,7 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -16,6 +16,8 @@ import (
 )
 
 func main() {
+	InitLogger()
+
 	createAdmin := flag.String("create-admin", "", "Create an admin user and exit")
 	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
@@ -30,7 +32,7 @@ func main() {
 	// Real environment variables always take precedence over .env values.
 	if os.Getenv("GIN_MODE") != "release" {
 		if err := godotenv.Load(); err != nil {
-			log.Println("No .env file found, using environment variables")
+			slog.Info("No .env file found, using environment variables")
 		}
 	}
 
@@ -47,12 +49,14 @@ func main() {
 		var password string
 		fmt.Scanln(&password)
 		if password == "" {
-			log.Fatal("Password cannot be empty")
+			slog.Error("Password cannot be empty")
+			os.Exit(1)
 		}
 		if err := CreateUser(*createAdmin, password); err != nil {
-			log.Fatal("Failed to create user: ", err)
+			slog.Error("Failed to create user", "error", err)
+			os.Exit(1)
 		}
-		log.Printf("User '%s' created successfully", *createAdmin)
+		slog.Info("User created successfully", "username", *createAdmin)
 		return
 	}
 
@@ -67,7 +71,7 @@ func main() {
 	secret := os.Getenv("SESSION_SECRET")
 	if secret == "" {
 		secret = "dev-secret-change-in-production"
-		log.Println("WARNING: SESSION_SECRET not set, using insecure default")
+		slog.Warn("SESSION_SECRET not set, using insecure default")
 	}
 	store := cookie.NewStore([]byte(secret))
 	r.Use(sessions.Sessions("archivist_session", store))
@@ -92,8 +96,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Server starting on port %s", port)
+	slog.Info("Server starting", "port", port)
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("Failed to start server: ", err)
+		slog.Error("Failed to start server", "error", err)
+		os.Exit(1)
 	}
 }

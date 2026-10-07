@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -14,7 +13,8 @@ import (
 )
 
 func main() {
-	log.SetPrefix("[importer] ")
+	InitLogger()
+
 	sheetsFlag := flag.String("sheets", "", "Comma-separated list of sheets to import: characters,dlusages,transactions,costofliving,registry,missions,guilds,guildeconomy")
 	showVersion := flag.Bool("version", false, "Print version and exit")
 	flag.Parse()
@@ -28,12 +28,13 @@ func main() {
 	// Real environment variables take precedence over .env values.
 	if os.Getenv("GIN_MODE") != "release" {
 		if err := godotenv.Load(); err != nil {
-			log.Println("No .env file found, using environment variables")
+			slog.Info("No .env file found, using environment variables")
 		}
 	}
 
 	if flag.NArg() < 1 {
-		log.Fatal("Usage: importer [--sheets=...] <path-to-excel-file>")
+		slog.Error("Usage: importer [--sheets=...] <path-to-excel-file>")
+		os.Exit(1)
 	}
 
 	dbPath := os.Getenv("DB_PATH")
@@ -44,7 +45,8 @@ func main() {
 
 	f, err := excelize.OpenFile(flag.Arg(0))
 	if err != nil {
-		log.Fatal("Failed to open Excel file: ", err)
+		slog.Error("Failed to open Excel file", "error", err)
+		os.Exit(1)
 	}
 	defer f.Close()
 
