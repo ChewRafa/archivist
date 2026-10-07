@@ -22,8 +22,10 @@ func LoginPageHandler(c *gin.Context) {
 func LoginPostHandler(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
+	ip := c.ClientIP()
 
 	if username == "" || password == "" {
+		recordFailedLoginAttempt(ip)
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"Title": "Iniciar Sesión",
 			"Error": "Usuario y contraseña son obligatorios",
@@ -33,6 +35,7 @@ func LoginPostHandler(c *gin.Context) {
 
 	user, err := Authenticate(username, password)
 	if err != nil {
+		recordFailedLoginAttempt(ip)
 		c.HTML(http.StatusUnauthorized, "login.html", gin.H{
 			"Title": "Iniciar Sesión",
 			"Error": "Usuario o contraseña incorrectos",
