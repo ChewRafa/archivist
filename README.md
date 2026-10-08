@@ -1,6 +1,6 @@
 # Archivist
 
-> **Version:** `v0.1.0-alpha.2` (preliminary) — see [CHANGELOG.md](CHANGELOG.md)
+> **Version:** `v0.1.0-alpha.2` — see [CHANGELOG.md](CHANGELOG.md)
 
 TTRPG Character and Guild Tracking — a web application built with Go for managing characters, missions, transactions, and guilds in tabletop role-playing games.
 
