@@ -28,6 +28,10 @@ body {
     background: var(--bulma-primary-soft);
 }
 
+[hidden] {
+    display: none !important;
+}
+
 /* Thin, theme-aware scrollbars */
 * {
     scrollbar-width: thin;

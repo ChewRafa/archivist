@@ -8,7 +8,7 @@ Go 1.25.5 web app for TTRPG character/guild tracking. Single module, no monorepo
 - `go run . --create-admin <username>` — create admin user (prompts for password), then exits
 - `go run -tags importer . <excel-file>` — import data from Excel into DB
 - `go build ./...` — verify compilation
-- `go test ./...` — run tests (`admin_seed_test.go`, `services_stats_test.go`); `make test` is equivalent
+- `go test ./...` — run tests (`admin_seed_test.go`, `services_stats_test.go`, `import_json_test.go`); `make test` is equivalent
 - `make` — build server (`server`) + importer (`importer`) binaries with version ldflags; `make version` prints the derived version
 
 ## Environment
@@ -41,11 +41,13 @@ middleware.go          → auth + CSRF + login rate-limit middleware
 render.go              → template compilation and rendering
 logger.go              → InitLogger: slog JSON handler (log/slog)
 version.go             → Version var injected via -ldflags
-importer_handlers.go   → web-based Excel import handlers
+importer_handlers.go   → web-based import handlers (detects .xlsx vs .json on POST /import)
+import_json.go         → JSON restore engine: ImportJSON (wipe + reload in one tx), format detection, export validation
 export.go              → ExportData struct + ExportAll query (all models → single JSON)
 export_handlers.go     → GET /export page + POST /export/download JSON file
 admin_seed_test.go     → admin env-seed tests
 services_stats_test.go → dashboard stats tests
+import_json_test.go    → JSON restore round-trip + format detection tests
 resources/base.html    → Base layout with sidebar, auth status, CSRF, pagination partial
 resources/login.html   → Standalone login form (no base layout)
 resources/pages/*.html → Content-only templates (define "content" block)
@@ -65,6 +67,7 @@ resources/static/      → CSS and other static assets
 - **`Character.Number`** has a unique index and is validated on create/update.
 - **SQLite file**: `data/archivist.db` — relative to working directory (override with `DB_PATH`)
 - **Excel importer** reads Spanish sheet names (e.g. "Lista de Personajes", "Uso de DL", "Economía de Gremios")
+- **Import page**: `POST /import` accepts `.xlsx` (merge with dedupe, sheet checkboxes apply) or `.json` (full restore: `ImportJSON` wipes all content tables *except `users`* and reloads the export as-is in one transaction, requires the confirmation checkbox). Format is detected by content sniffing first (`{` vs `PK\x03\x04`), extension as fallback. `character_stats` is a view — never inserted, refreshed at the end of the restore.
 - **Guild treasury** (`Arcas`) is synced from the sum of `GuildTransaction` rows
 
 ## Routes

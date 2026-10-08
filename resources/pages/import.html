@@ -2,7 +2,7 @@
 <div class="page-header">
     <div class="page-header-main">
         <h1>Importar Datos</h1>
-        <p class="subtitle is-6">Sube un archivo Excel (.xlsx) para llenar la base de datos</p>
+        <p class="subtitle is-6">Sube un archivo Excel (.xlsx) o JSON exportado para llenar la base de datos</p>
     </div>
 </div>
 
@@ -23,10 +23,16 @@
             <p class="subtitle is-6 has-text-grey mb-0">
                 {{if $r.Errors}}Completada con advertencias — revisa los errores{{else}}Importación completada correctamente{{end}}
             </p>
+            {{if .ExportMeta}}
+            <p class="help mt-1">Origen: {{if .ExportMeta.Version}}v{{.ExportMeta.Version}} · {{end}}exportado el {{.ExportMeta.ExportedAt.Format "02/01/2006 15:04"}} · {{.ExportMeta.TotalRows}} registros en el archivo</p>
+            {{end}}
         </div>
         <span class="tag is-medium {{if $r.Errors}}is-warning{{else}}is-success{{end}}">
             {{if $r.Errors}}{{len $r.Errors}} {{if eq (len $r.Errors) 1}}error{{else}}errores{{end}}{{else}}Sin errores{{end}}
         </span>
+        {{if eq .Format "json"}}
+        <span class="tag is-medium is-info is-light">Restauración (JSON)</span>
+        {{end}}
     </div>
 
     <div class="columns is-multiline mt-3">
@@ -120,6 +126,17 @@
                 </div>
             </div>
         </div>
+        {{if gt $r.GuildMembers 0}}
+        <div class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="import-stat">
+                <p class="heading">Miembros de Gremio</p>
+                <p class="import-stat-value">{{$r.GuildMembers}}</p>
+                <div class="tags">
+                    <span class="tag is-success is-light">+{{$r.GuildMembers}} creados</span>
+                </div>
+            </div>
+        </div>
+        {{end}}
     </div>
 
     {{if $r.Errors}}
@@ -141,16 +158,16 @@
     <div class="columns is-multiline">
         <div class="column is-12-tablet is-5-desktop">
             <div class="box import-upload-box">
-                <p class="title is-6 mb-1">1 · Archivo Excel</p>
-                <p class="help mb-3">Solo se aceptan archivos <strong>.xlsx</strong></p>
+                <p class="title is-6 mb-1">1 · Archivo (.xlsx o .json)</p>
+                <p class="help mb-3"><strong>.xlsx</strong> importa las hojas seleccionadas · <strong>.json</strong> restaura todo el contenido</p>
 
-                <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0" aria-label="Seleccionar archivo Excel">
-                    <input id="import-file" class="import-file-input" type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0" aria-label="Seleccionar archivo Excel o JSON">
+                    <input id="import-file" class="import-file-input" type="file" name="file" accept=".xlsx,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
                     <div class="import-dropzone-inner">
                         <span class="import-dropzone-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         </span>
-                        <p class="import-dropzone-title"><strong>Arrastra tu .xlsx aquí</strong></p>
+                        <p class="import-dropzone-title"><strong>Arrastra tu .xlsx o .json aquí</strong></p>
                         <p class="import-dropzone-sub">o <span class="has-text-link">haz clic para buscarlo</span></p>
                     </div>
                 </div>
@@ -165,11 +182,23 @@
                     </div>
                     <button type="button" id="import-file-clear" class="delete" aria-label="Quitar archivo"></button>
                 </div>
-                <p id="import-file-error" class="help is-danger" hidden>El archivo debe ser un .xlsx válido.</p>
+                <p id="import-file-error" class="help is-danger" hidden>El archivo debe ser un .xlsx o .json válido.</p>
+            </div>
+
+            <div id="import-restore-confirm" class="box mt-4" hidden>
+                <p class="title is-6 mb-1">Restauración desde JSON</p>
+                <div class="notification is-warning is-light mb-3">
+                    <p>Este archivo <strong>borrará todos los datos actuales</strong> y los reemplazará con el contenido del JSON. Las cuentas de usuario no se ven afectadas.</p>
+                </div>
+                <label class="checkbox">
+                    <input type="checkbox" id="import-restore-check" name="restore_confirm" value="1">
+                    <strong>Confirmo que deseo borrar los datos actuales y restaurar desde el JSON</strong>
+                </label>
+                <p class="help mt-2">Los archivos JSON importan todas las secciones; la selección de hojas no aplica.</p>
             </div>
         </div>
 
-        <div class="column is-12-tablet is-7-desktop">
+        <div class="column is-12-tablet is-7-desktop" id="import-sheets-box">
             <div class="box">
                 <div class="import-sheets-head">
                     <div>

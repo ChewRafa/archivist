@@ -279,6 +279,9 @@
         var submitBtn = document.getElementById("import-submit");
         var resetBtn = document.getElementById("import-reset");
         var countTag = document.getElementById("import-sheets-count");
+        var restoreBox = document.getElementById("import-restore-confirm");
+        var restoreCheck = document.getElementById("import-restore-check");
+        var sheetsBox = document.getElementById("import-sheets-box");
         if (!dropzone || !input) return;
 
         function formatSize(bytes) {
@@ -288,12 +291,32 @@
             return (bytes / (1024 * 1024)).toFixed(2) + " MB";
         }
 
-        function isValidXlsx(file) {
+        function isJsonFile(file) {
             if (!file) return false;
             var name = (file.name || "").toLowerCase();
-            if (name.endsWith(".xlsx")) return true;
+            if (name.endsWith(".json")) return true;
             var type = file.type || "";
-            return type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            return type === "application/json" || type.endsWith("+json");
+        }
+
+        function isValidImportFile(file) {
+            if (!file) return false;
+            var name = (file.name || "").toLowerCase();
+            if (name.endsWith(".xlsx") || name.endsWith(".json")) return true;
+            var type = file.type || "";
+            return type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                type === "application/json" ||
+                type.endsWith("+json");
+        }
+
+        function applyFileMode(file) {
+            var json = isJsonFile(file);
+            if (restoreBox) restoreBox.hidden = !json;
+            if (sheetsBox) sheetsBox.hidden = json;
+            if (restoreCheck) {
+                restoreCheck.required = json;
+                if (!json) restoreCheck.checked = false;
+            }
         }
 
         function updateSheetsCount() {
@@ -322,14 +345,16 @@
             if (preview) preview.hidden = true;
             dropzone.classList.remove("has-file");
             if (errorMsg) errorMsg.hidden = true;
+            applyFileMode(null);
         }
 
         function setFile(file) {
             if (!file) return;
-            if (!isValidXlsx(file)) {
+            if (!isValidImportFile(file)) {
                 if (errorMsg) errorMsg.hidden = false;
                 return;
             }
+            applyFileMode(file);
             showPreview(file);
         }
 

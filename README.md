@@ -1,6 +1,6 @@
 # Archivist
 
-> **Version:** `v0.1.0-alpha.1` (preliminary) — see [CHANGELOG.md](CHANGELOG.md)
+> **Version:** `v0.1.0-alpha.2` (preliminary) — see [CHANGELOG.md](CHANGELOG.md)
 
 TTRPG Character and Guild Tracking — a web application built with Go for managing characters, missions, transactions, and guilds in tabletop role-playing games.
 
@@ -13,7 +13,7 @@ TTRPG Character and Guild Tracking — a web application built with Go for manag
 - **Cost of Living** — record recurring upkeep costs per character, with pagination
 - **Transactions** — track gold income and expenses per character, with pagination
 - **Guilds** — manage guilds with leaders, members, halls, treasuries, and cost of living
-- **Excel Import** — bulk import data from Excel spreadsheets via drag-and-drop upload with a result dashboard
+- **Import / Export** — bulk import from Excel spreadsheets via drag-and-drop, restore the whole database from an exported JSON backup, and download a full JSON export of every table
 - **Authentication** — session-based auth with bcrypt password hashing, CSRF protection, and login rate limiting (brute-force protection)
 - **Structured logging** — JSON logs via Go's `log/slog`
 
@@ -131,6 +131,22 @@ go run -tags importer . <path-to-excel-file>
 
 Imports data from an Excel file with Spanish sheet names. See [Excel Import Format](#excel-import-format) for details.
 
+### Exporting and restoring data
+
+The web UI provides a matching export/restore pair:
+
+```bash
+# In the browser
+GET  /export            # shows per-table record counts (incl. soft-deleted rows)
+POST /export/download   # downloads archivist-export-<timestamp>.json
+POST /import            # upload the .json back to restore the database
+```
+
+- The export contains every table as JSON, including soft-deleted records.
+- Uploading a `.json` file on the import page performs a **full restore**: all content tables are wiped and reloaded from the file in a single transaction (IDs, timestamps, and soft-deletes are preserved). The `users` table is **never** touched, and an explicit confirmation checkbox is required.
+- The sheet-selection checkboxes apply only to `.xlsx` uploads; JSON files always restore every section.
+- The CLI importer (`-tags importer`) stays Excel-only.
+
 ## Project Structure
 
 ```
@@ -151,11 +167,15 @@ users.go               Password hashing, user auth, admin user upsert
 guild_service.go       Guild invariants (join/leave validation, name sync)
 guild_treasury.go      Guild treasury sync
 importer.go            Excel import engine
-importer_handlers.go   Web-based Excel import handler
+importer_handlers.go   Web-based import handlers (.xlsx + .json restore)
+import_json.go         JSON restore engine + import format detection
+export.go              ExportData struct + ExportAll query (all tables → JSON)
+export_handlers.go     Export page and JSON download handlers
 logger.go              slog JSON logger initialization
 version.go             Version variable (injected via -ldflags)
 admin_seed_test.go     Admin env-seed tests
 services_stats_test.go Dashboard stats tests
+import_json_test.go    JSON restore round-trip and format detection tests
 
 Makefile               Common build/run/test targets
 build.sh               Release build used by Render
@@ -223,7 +243,9 @@ Both binaries live in a single flat `package main`. The server is built by defau
 | POST   | `/cost-of-living/:id`                              | Update cost of living    |
 | POST   | `/cost-of-living/:id/delete`                       | Delete cost of living    |
 | GET    | `/import`                                          | Import page              |
-| POST   | `/import`                                          | Submit Excel import      |
+| POST   | `/import`                                          | Import `.xlsx` or restore `.json` backup |
+| GET    | `/export`                                          | Export page (record counts) |
+| POST   | `/export/download`                                 | Download full DB as JSON |
 | GET    | `/guilds`                                          | Guild list               |
 | GET    | `/guilds/create`                                   | New guild form           |
 | POST   | `/guilds`                                          | Create guild             |
@@ -257,6 +279,27 @@ The importer reads from an Excel file with Spanish sheet names:
 
 Guild treasury (`Arcas`) is computed as the sum of all economy transactions for that guild.
 
+## JSON Export Format
+
+`POST /export/download` produces a single pretty-printed JSON object with:
+
+| Section                  | Contents                                            |
+|--------------------------|-----------------------------------------------------|
+| `exported_at`, `version` | Export timestamp and build version                  |
+| `characters`             | All characters, including soft-deleted (`deleted_at`) |
+| `dl_usages`              | Free-day usage records                              |
+| `transactions`           | Character transactions                              |
+| `cost_of_livings`        | Cost of living records                              |
+| `character_registries`   | Character XP/gold/renown event log                  |
+| `missions`               | Missions (including soft-deleted)                   |
+| `mission_entries`        | Per-character mission XP/gold/renown (including soft-deleted) |
+| `guilds`                 | Guilds (treasury, hall, dates)                      |
+| `guild_transactions`     | Guild treasury ledger (Arcas)                       |
+| `guild_members`          | Guild membership pairs (`guild_id`, `character_id`) |
+| `character_stats`        | Derived view output — not imported back, regenerated by `RefreshCharacterStatsView` during a restore |
+
+Uploading this file on the import page restores the database exactly as exported (see [Exporting and restoring data](#exporting-and-restoring-data)).
+
 ## Development
 
 The database auto-migrates on every start — schema changes are applied live. Set `GIN_MODE=debug` for verbose Gin output:
@@ -282,11 +325,11 @@ This project uses [Semantic Versioning](https://semver.org). The current version
 
 ```bash
 go run . --version          # prints Version (dev if no tag)
-go build -tags netgo -ldflags "-s -w -X main.Version=v0.1.0-alpha.1" -o app .
+go build -tags netgo -ldflags "-s -w -X main.Version=v0.1.0-alpha.2" -o app .
 make build                  # auto-derives VERSION from git describe --tags
 make version                # print the derived VERSION
 ./build.sh                  # same as make build, used by Render
-curl http://localhost:8080/health  # {"status":"ok","version":"v0.1.0-alpha.1"}
+curl http://localhost:8080/health  # {"status":"ok","version":"v0.1.0-alpha.2"}
 ```
 
 `/health` also pings the database: if the connection fails it returns `503` with `{"status":"error","db":"unavailable","version":"..."}` (or `"db":"unreachable"` when the ping fails).

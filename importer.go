@@ -31,6 +31,7 @@ type ImportResult struct {
 	GuildsSkipped            int
 	GuildTransactions        int
 	GuildTransactionsSkipped int
+	GuildMembers             int
 	Errors                   []string
 }
 
