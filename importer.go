@@ -187,6 +187,26 @@ func shouldImportSheet(opts *ImportOptions, key string) bool {
 	return false
 }
 
+// withImportSavepoint runs fn inside a savepoint so a failed statement does not
+// abort the surrounding import transaction. PostgreSQL rejects every later
+// command after the first error; rolling back to the savepoint clears that.
+func withImportSavepoint(tx *gorm.DB, fn func(tx *gorm.DB) error) error {
+	const name = "archivist_import_row"
+	if err := tx.Exec("SAVEPOINT " + name).Error; err != nil {
+		return err
+	}
+	if err := fn(tx); err != nil {
+		if rbErr := tx.Exec("ROLLBACK TO SAVEPOINT " + name).Error; rbErr != nil {
+			return fmt.Errorf("%w (rollback savepoint: %v)", err, rbErr)
+		}
+		if relErr := tx.Exec("RELEASE SAVEPOINT " + name).Error; relErr != nil {
+			return fmt.Errorf("%w (release savepoint: %v)", err, relErr)
+		}
+		return err
+	}
+	return tx.Exec("RELEASE SAVEPOINT " + name).Error
+}
+
 func ImportExcel(f *excelize.File, opts ...ImportOptions) ImportResult {
 	var result ImportResult
 
@@ -276,7 +296,16 @@ func importCharacters(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			result.CharactersSkipped++
 			continue
 		}
-		tx.Create(&character)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing character %s: %v", character.Name, err))
+			continue
+		}
+		if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			return tx.Create(&character).Error
+		}); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing character %s: %v", character.Name, err))
+			continue
+		}
 		result.Characters++
 	}
 }
@@ -302,6 +331,9 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing DL usage row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -345,7 +377,16 @@ func importDLUsages(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			result.DLUsagesSkipped++
 			continue
 		}
-		tx.Create(&usage)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing DL usage row %d: %v", i+1, err))
+			continue
+		}
+		if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			return tx.Create(&usage).Error
+		}); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing DL usage row %d: %v", i+1, err))
+			continue
+		}
 		result.DLUsages++
 	}
 }
@@ -370,7 +411,11 @@ func importTransactions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
+			} else {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing transaction row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -398,7 +443,16 @@ func importTransactions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			result.TransactionsSkipped++
 			continue
 		}
-		tx.Create(&txEntry)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing transaction row %d: %v", i+1, err))
+			continue
+		}
+		if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			return tx.Create(&txEntry).Error
+		}); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing transaction row %d: %v", i+1, err))
+			continue
+		}
 		result.Transactions++
 	}
 }
@@ -439,6 +493,9 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing cost of living row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -452,7 +509,11 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			if mount != "" {
 				updates["mount"] = mount
 			}
-			tx.Model(&character).Updates(updates)
+			if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+				return tx.Model(&character).Updates(updates).Error
+			}); err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error updating character %s: %v", charName, err))
+			}
 		}
 
 		for j := 3; j < len(row) && j-3 < len(colDates); j++ {
@@ -482,7 +543,16 @@ func importCostOfLiving(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				result.CostOfLivingsSkipped++
 				continue
 			}
-			tx.Create(&cost)
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing cost of living row %d: %v", i+1, err))
+				continue
+			}
+			if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+				return tx.Create(&cost).Error
+			}); err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing cost of living row %d: %v", i+1, err))
+				continue
+			}
 			result.CostOfLivings++
 		}
 	}
@@ -508,7 +578,11 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 
 		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Character not found: %s", charName))
+			} else {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing registry row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -543,7 +617,16 @@ func importCharacterRegistry(tx *gorm.DB, f *excelize.File, result *ImportResult
 			result.RegistriesSkipped++
 			continue
 		}
-		tx.Create(&registry)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing registry row %d: %v", i+1, err))
+			continue
+		}
+		if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			return tx.Create(&registry).Error
+		}); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing registry row %d: %v", i+1, err))
+			continue
+		}
 		result.Registries++
 	}
 }
@@ -588,8 +671,13 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 				if err == nil {
 					currentMission = &existing
 					result.MissionsSkipped++
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing mission %s: %v", mission.Name, err))
+				} else if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+					return tx.Create(&mission).Error
+				}); err != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing mission %s: %v", mission.Name, err))
 				} else {
-					tx.Create(&mission)
 					currentMission = &mission
 					result.Missions++
 				}
@@ -607,6 +695,9 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		var character Character
 		if err := tx.Where("name = ?", charName).First(&character).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing mission entry row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -640,7 +731,16 @@ func importMissions(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			result.MissionEntriesSkipped++
 			continue
 		}
-		tx.Create(&entry)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing mission entry row %d: %v", i+1, err))
+			continue
+		}
+		if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			return tx.Create(&entry).Error
+		}); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("Error importing mission entry row %d: %v", i+1, err))
+			continue
+		}
 		result.MissionEntries++
 	}
 }
@@ -705,86 +805,122 @@ func importGuilds(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			}
 
 			leaderName := strings.TrimSpace(row[3])
+			skipGuildWrite := false
 			if leaderName != "" {
 				var leader Character
 				if err := tx.Where("name = ?", leaderName).First(&leader).Error; err == nil {
 					guild.LeaderID = &leader.ID
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild %s: %v", guildName, err))
+					skipGuildWrite = true
 				}
 			}
 
-			var existing Guild
-			err := tx.Where("name = ?", guild.Name).First(&existing).Error
-			if err == nil {
-				guildMap[guildName] = &existing
-				result.GuildsSkipped++
-			} else {
-				tx.Create(guild)
-				guildMap[guildName] = guild
-				result.Guilds++
+			if !skipGuildWrite {
+				var existing Guild
+				err := tx.Where("name = ?", guild.Name).First(&existing).Error
+				if err == nil {
+					guildMap[guildName] = &existing
+					result.GuildsSkipped++
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild %s: %v", guildName, err))
+				} else if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+					return tx.Create(guild).Error
+				}); err != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild %s: %v", guildName, err))
+				} else {
+					guildMap[guildName] = guild
+					result.Guilds++
+				}
 			}
 
 			if treasury != 0 {
-				seedDate := regDate
-				if seedDate == nil {
-					seedDate = appDate
-				}
-				if seedDate == nil {
-					now := time.Now()
-					seedDate = &now
-				}
-				created, err := CreateGuildTransaction(tx, GuildTransaction{
-					Date:    *seedDate,
-					GuildID: guildMap[guildName].ID,
-					Amount:  treasury,
-					Notes:   "Registro Inicial",
-				})
-				if err != nil {
-					result.Errors = append(result.Errors, fmt.Sprintf("Error seeding treasury for %s: %v", guildName, err))
-				} else if created {
-					result.GuildTransactions++
-				} else {
-					result.GuildTransactionsSkipped++
+				targetGuild := guildMap[guildName]
+				if targetGuild != nil && targetGuild.ID != 0 {
+					seedDate := regDate
+					if seedDate == nil {
+						seedDate = appDate
+					}
+					if seedDate == nil {
+						now := time.Now()
+						seedDate = &now
+					}
+					var created bool
+					err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+						var cerr error
+						created, cerr = CreateGuildTransaction(tx, GuildTransaction{
+							Date:    *seedDate,
+							GuildID: targetGuild.ID,
+							Amount:  treasury,
+							Notes:   "Registro Inicial",
+						})
+						return cerr
+					})
+					if err != nil {
+						result.Errors = append(result.Errors, fmt.Sprintf("Error seeding treasury for %s: %v", guildName, err))
+					} else if created {
+						result.GuildTransactions++
+					} else {
+						result.GuildTransactionsSkipped++
+					}
 				}
 			}
 		}
 
 		if memberName != "" {
 			var member Character
-			if err := tx.Where("name = ?", memberName).First(&member).Error; err == nil {
-				effectiveGuildName := guildName
-				if effectiveGuildName == "" {
-					effectiveGuildName = lastGuildName
+			if err := tx.Where("name = ?", memberName).First(&member).Error; err != nil {
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild member %s: %v", memberName, err))
 				}
-				if effectiveGuildName == "" {
-					continue
+				continue
+			}
+			effectiveGuildName := guildName
+			if effectiveGuildName == "" {
+				effectiveGuildName = lastGuildName
+			}
+			if effectiveGuildName == "" {
+				continue
+			}
+			target, ok := guildMap[effectiveGuildName]
+			if !ok || target == nil {
+				continue
+			}
+			// Idempotency: already member?
+			var existing int64
+			if err := tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ? AND character_id = ?", target.ID, member.ID).Scan(&existing).Error; err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild member %s: %v", member.Name, err))
+				continue
+			}
+			if existing > 0 {
+				// Keep cache in sync even if already member
+				if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+					return SyncCharacterGuildName(tx, member.ID)
+				}); err != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("Error syncing guild name for %s: %v", member.Name, err))
 				}
-				target, ok := guildMap[effectiveGuildName]
-				if !ok || target == nil {
-					continue
+				continue
+			}
+			// Validate business rules: 15 per guild, 3 activos per player same guild, no cross-guild (activos only)
+			if err := ValidateGuildJoin(tx, member.Player, target.ID, member.ID, member.Status); err != nil {
+				if errors.Is(err, ErrGuildFull) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Gremio lleno (%s) - no se añadió %s: %v", target.Name, member.Name, err))
+				} else if errors.Is(err, ErrPlayerLimit) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Jugador límite 3 activos (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
+				} else if errors.Is(err, ErrCrossGuild) {
+					result.Errors = append(result.Errors, fmt.Sprintf("Jugador en otro gremio (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
+				} else {
+					result.Errors = append(result.Errors, fmt.Sprintf("No se añadió %s a %s: %v", member.Name, target.Name, err))
 				}
-				// Idempotency: already member?
-				var existing int64
-				tx.Raw("SELECT COUNT(*) FROM guild_members WHERE guild_id = ? AND character_id = ?", target.ID, member.ID).Scan(&existing)
-				if existing > 0 {
-					// Keep cache in sync even if already member
-					_ = SyncCharacterGuildName(tx, member.ID)
-					continue
+				continue
+			}
+			if err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+				if err := tx.Exec("INSERT INTO guild_members (guild_id, character_id) VALUES (?, ?)", target.ID, member.ID).Error; err != nil {
+					return err
 				}
-				// Validate business rules: 15 per guild, 3 activos per player same guild, no cross-guild (activos only)
-				if err := ValidateGuildJoin(tx, member.Player, target.ID, member.ID, member.Status); err != nil {
-					if errors.Is(err, ErrGuildFull) {
-						result.Errors = append(result.Errors, fmt.Sprintf("Gremio lleno (%s) - no se añadió %s: %v", target.Name, member.Name, err))
-					} else if errors.Is(err, ErrPlayerLimit) {
-						result.Errors = append(result.Errors, fmt.Sprintf("Jugador límite 3 activos (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
-					} else if errors.Is(err, ErrCrossGuild) {
-						result.Errors = append(result.Errors, fmt.Sprintf("Jugador en otro gremio (%s) - no se añadió %s a %s: %v", member.Player, member.Name, target.Name, err))
-					} else {
-						result.Errors = append(result.Errors, fmt.Sprintf("No se añadió %s a %s: %v", member.Name, target.Name, err))
-					}
-					continue
-				}
-				tx.Exec("INSERT INTO guild_members (guild_id, character_id) VALUES (?, ?)", target.ID, member.ID)
-				_ = SyncCharacterGuildName(tx, member.ID)
+				return SyncCharacterGuildName(tx, member.ID)
+			}); err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("No se añadió %s a %s: %v", member.Name, target.Name, err))
 			}
 		}
 	}
@@ -810,7 +946,11 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 
 		var guild Guild
 		if err := tx.Where("name = ?", guildName).First(&guild).Error; err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("Guild not found: %s", guildName))
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				result.Errors = append(result.Errors, fmt.Sprintf("Guild not found: %s", guildName))
+			} else {
+				result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild economy row %d: %v", i+1, err))
+			}
 			continue
 		}
 
@@ -834,11 +974,16 @@ func importGuildEconomy(tx *gorm.DB, f *excelize.File, result *ImportResult) {
 			notes = strings.TrimSpace(row[3])
 		}
 
-		created, err := CreateGuildTransaction(tx, GuildTransaction{
-			Date:    *dt,
-			GuildID: guild.ID,
-			Amount:  amount,
-			Notes:   notes,
+		var created bool
+		err := withImportSavepoint(tx, func(tx *gorm.DB) error {
+			var cerr error
+			created, cerr = CreateGuildTransaction(tx, GuildTransaction{
+				Date:    *dt,
+				GuildID: guild.ID,
+				Amount:  amount,
+				Notes:   notes,
+			})
+			return cerr
 		})
 		if err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("Error importing guild economy row %d: %v", i+1, err))

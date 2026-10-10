@@ -17,6 +17,13 @@ var DB *gorm.DB
 func Init(dbPath string) {
 	var err error
 
+	if DB != nil {
+		if sqlDB, dbErr := DB.DB(); dbErr == nil {
+			_ = sqlDB.Close()
+		}
+		DB = nil
+	}
+
 	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
 		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	} else {

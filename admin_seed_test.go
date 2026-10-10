@@ -10,6 +10,13 @@ import (
 func initTestDB(t *testing.T) {
 	t.Helper()
 	Init(filepath.Join(t.TempDir(), "test.db"))
+	t.Cleanup(func() {
+		sqlDB, err := DB.DB()
+		if err != nil {
+			return
+		}
+		sqlDB.Close()
+	})
 }
 
 func TestUpsertAdminUserCreates(t *testing.T) {
